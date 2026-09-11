@@ -1,0 +1,7 @@
+yt-dlp>=2026.8
+pyyaml>=6
+pillow>=10
+imagehash>=4.3
+numpy>=1.26
+imageio-ffmpeg>=0.5   # bundled ffmpeg binary used when ffmpeg is not on PATH
+pytest>=8

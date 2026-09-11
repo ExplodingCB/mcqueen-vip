@@ -1,0 +1,284 @@
+# Footage sources for the perception model. See docs/08-training-data.md.
+#
+# YouTube entries are expanded by fetch_youtube.py. Fields:
+#   id          short unique name, used as the directory name under raw/ and frames/
+#   kind        youtube_channel | youtube_playlist | youtube_search | youtube_video
+#   url         channel /videos URL, playlist URL, or video URL (channels and playlists)
+#   query       search string (youtube_search only)
+#   max_results cap on candidates per search (youtube_search only)
+#   camera      helmet | chassis_front | chassis_rear | trackside | mixed
+#   track       track name if the source is track-specific
+#   permission  none | requested | granted   (non-CC downloads require granted)
+#   min_seconds / max_seconds   duration filter
+#   title_include / title_exclude   case-insensitive substrings
+#   crop        [top, bottom, left, right] fractions removed at frame extraction
+#   notes       free text
+#
+# Dataset entries are informational; download them with the commands shown.
+
+defaults:
+  min_seconds: 120
+  max_seconds: 7200
+  title_exclude: ["crash compilation", "reaction", "unboxing", "review", "tutorial", "setup guide"]
+  crop: [0.0, 0.0, 0.0, 0.0]
+
+youtube:
+  - id: purdue_gp_foundation
+    kind: youtube_channel
+    url: https://www.youtube.com/@purduegrandprixfoundation4523/videos
+    camera: mixed
+    track: purdue_grand_prix
+    permission: none
+    notes: Race broadcasts, mostly trackside. Ask the Foundation for raw onboard files.
+
+  - id: purdue_gp_playlist
+    kind: youtube_playlist
+    url: https://www.youtube.com/playlist?list=PLZ21C3BEHG5pM46OaDk3fF0ocYgMhuCx1
+    camera: mixed
+    track: purdue_grand_prix
+    permission: none
+
+  - id: purdue_gp_onboard_search
+    kind: youtube_search
+    query: Purdue Grand Prix onboard
+    max_results: 200
+    camera: helmet
+    track: purdue_grand_prix
+    permission: none
+    title_include: ["purdue"]
+    notes: Student teams post onboard laps of the exact track. Highest value per hour.
+
+  - id: evgrandprix_search
+    kind: youtube_search
+    query: evGrandPrix onboard
+    max_results: 100
+    camera: mixed
+    permission: none
+
+  - id: fia_karting
+    kind: youtube_channel
+    url: https://www.youtube.com/channel/UCj5zsq1zTNtcA4lDOUz2kAg/videos
+    camera: mixed
+    permission: none
+    title_include: ["onboard"]
+    notes: FIA Karting Championship official channel; onboard laps are labeled as such in titles.
+
+  - id: kart_chaser
+    kind: youtube_channel
+    url: https://www.youtube.com/@KartChaser/videos
+    camera: mixed
+    permission: none
+    title_include: ["onboard", "ride along", "pov"]
+    notes: North American series media. Contact for raw onboard files.
+
+  - id: rotax_karting
+    kind: youtube_channel
+    url: https://www.youtube.com/@RotaxKarting/videos
+    camera: mixed
+    permission: none
+    title_include: ["onboard", "helmet", "pov"]
+
+  - id: karting_live_tv
+    kind: youtube_channel
+    url: https://www.youtube.com/channel/UCa6pF3EwQW-Sj-46DOXWydw/videos
+    camera: trackside
+    permission: none
+    notes: Broadcasts. Kart detection only.
+
+  - id: ultimate_karting_championship
+    kind: youtube_channel
+    url: https://www.youtube.com/channel/UC9Sw5Rm10nRQD7PNcL2tb1g/videos
+    camera: trackside
+    permission: none
+    notes: Broadcasts. Kart detection only.
+
+  - id: karting_onboard_playlist
+    kind: youtube_playlist
+    url: https://www.youtube.com/playlist?list=PLDduLaQ1IQW2s9T7CBJFIPa_vUf5Amm2T
+    camera: helmet
+    permission: none
+
+  - id: q_kart_onboard
+    kind: youtube_search
+    query: kart onboard
+    max_results: 300
+    camera: helmet
+    permission: none
+
+  - id: q_karting_onboard
+    kind: youtube_search
+    query: karting onboard full race
+    max_results: 300
+    camera: helmet
+    permission: none
+
+  - id: q_go_kart_pov
+    kind: youtube_search
+    query: go kart POV
+    max_results: 300
+    camera: helmet
+    permission: none
+
+  - id: q_kart_helmet_cam
+    kind: youtube_search
+    query: kart helmet cam
+    max_results: 200
+    camera: helmet
+    permission: none
+    crop: [0.0, 0.12, 0.0, 0.0]
+    notes: Chin bar usually intrudes at the bottom of helmet footage.
+
+  - id: q_kart_chassis_cam
+    kind: youtube_search
+    query: kart chassis mounted camera onboard
+    max_results: 200
+    camera: chassis_front
+    permission: none
+    notes: Closest match to our camera placement.
+
+  - id: q_ka100_onboard
+    kind: youtube_search
+    query: KA100 onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_x30_onboard
+    kind: youtube_search
+    query: X30 onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_kz_onboard
+    kind: youtube_search
+    query: KZ shifter kart onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_rotax_onboard
+    kind: youtube_search
+    query: Rotax Max onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_lo206_onboard
+    kind: youtube_search
+    query: LO206 onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_kart_rain_onboard
+    kind: youtube_search
+    query: kart rain onboard wet
+    max_results: 200
+    camera: helmet
+    permission: none
+    notes: Wet-track diversity is scarce; keep every one of these.
+
+  - id: q_kart_practice_full
+    kind: youtube_search
+    query: kart practice onboard full session
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_electric_kart_onboard
+    kind: youtube_search
+    query: electric kart onboard
+    max_results: 100
+    camera: mixed
+    permission: none
+
+  - id: q_fr_camera_embarquee
+    kind: youtube_search
+    query: karting caméra embarquée
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_it_kart_onboard
+    kind: youtube_search
+    query: kart onboard giro pista
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_es_kart_onboard
+    kind: youtube_search
+    query: karting cámara onboard
+    max_results: 200
+    camera: helmet
+    permission: none
+
+  - id: q_de_kart_onboard
+    kind: youtube_search
+    query: Kart Onboard Rennen
+    max_results: 200
+    camera: helmet
+    permission: none
+
+datasets:
+  - id: roratrack
+    name: RoRaTrack (Purdue, Putnam Park)
+    how: "Kaggle: kaggle datasets download shreya64/roratrack-dataset ; code at https://github.com/ghosh64/RaceGAN"
+    camera: chassis_front
+    license: not stated
+  - id: racecar
+    name: RACECAR (Indy Autonomous Challenge)
+    how: "aws s3 cp s3://racecar-dataset/RACECAR-nuScenes . --recursive --no-sign-request   (us-west-2)"
+    camera: chassis_front
+    license: CC BY-NC 4.0
+  - id: spawn99_karting
+    name: karting (kart bounding boxes from race stills)
+    how: "huggingface-cli download spawn99/karting --repo-type dataset"
+    camera: trackside
+    license: not stated
+  - id: aks_gokart_sample_set
+    name: AKS GoKartSampleSet
+    how: "git clone https://github.com/autonomous-karting-series/GoKartSampleSet"
+    camera: trackside
+    license: GPL-3.0
+  - id: gokartcentralen
+    name: autonomous_platform_gokartcentrallen_imitation_learning_dataset
+    how: "Request access at https://huggingface.co/datasets/hamidebadi/autonomous_platform_gokartcentrallen_imitation_learning_dataset then huggingface-cli download"
+    camera: chassis_front
+    license: gated
+  - id: roboflow_racetrack
+    name: Roboflow racetrack instance segmentation (4,698 images)
+    how: "https://universe.roboflow.com/autonomous-driving-challenge/racetrack"
+    camera: chassis_front
+    license: per project page
+  - id: track_detection_ghosh64
+    name: track-detection (masks on frames from four racing videos)
+    how: "git clone https://github.com/ghosh64/track-detection"
+    camera: chassis_front
+    license: not stated
+  - id: fsoco
+    name: FSOCO cones
+    how: "https://fsoco.github.io/fsoco-dataset/"
+    camera: chassis_front
+    license: GPL-3.0
+  - id: comma2k19
+    name: comma2k19 (33 h highway)
+    how: "https://github.com/commaai/comma2k19 (chunks) or huggingface-cli download commaai/comma2k19 --repo-type dataset"
+    camera: chassis_front
+    license: MIT
+  - id: opendv_youtube
+    name: OpenDV-YouTube video ID list and toolkit
+    how: "https://github.com/OpenDriveLab/DriveAGI/tree/main/opendv"
+    camera: chassis_front
+    license: videos under their YouTube licenses; annotations CC BY-NC-SA 4.0
+  - id: drivable_area_hf
+    name: drivable_area_segmentation (26k image and mask pairs)
+    how: "huggingface-cli download samuelsze/drivable_area_segmentation --repo-type dataset"
+    camera: chassis_front
+    license: not stated
+  - id: carla_expert_racing
+    name: URJC-DeepRacer CARLA racing with masks
+    how: "huggingface-cli download urjc-deepracer/carla-expert-racing --repo-type dataset"
+    camera: chassis_front
+    license: Apache-2.0

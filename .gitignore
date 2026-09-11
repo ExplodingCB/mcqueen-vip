@@ -21,3 +21,8 @@ logs/
 .vscode/
 .idea/
 *.swp
+
+# Footage never enters git
+training/data/raw/
+training/data/frames/
+training/data/manifest.jsonl
