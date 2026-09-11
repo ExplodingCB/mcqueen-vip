@@ -1,0 +1,23 @@
+# colcon
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Logs and data that never belong in git
+*.mcap
+*.db3
+logs/
+*.engine
+*.onnx
+
+# Editors
+.vscode/
+.idea/
+*.swp
