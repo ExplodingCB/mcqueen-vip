@@ -26,9 +26,9 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 colcon test && colcon test-result --verbose
 ```
 
-C++ packages use `ament_cmake` with warnings as errors, `clang-format` (the config file at the root) and `clang-tidy` in CI. Python packages use `ruff` for lint and format and `pytest` for tests. `pre-commit` runs both before every commit. CI on GitHub Actions builds the workspace in the x86 container, runs the tests, and runs the replay suite against reference MCAP files stored with Git LFS.
+C and C++ packages use `ament_cmake` with warnings as errors, `clang-format` (the config file at the root) and `clang-tidy` in CI. Python packages use `ruff` for lint and format (configured in the root `pyproject.toml`) and `pytest` for tests. `pre-commit` runs both before every commit. CI on GitHub Actions (`.github/workflows/ci.yml`) has a host job with no ROS (lint, clang-format, the gateway and control core cmake tests, pytest, and the simulator lapping the synthetic oval) and a Jazzy container job that builds the ROS 2 packages. The replay suite against reference MCAP files stored with Git LFS is added when the first logs exist.
 
-Firmware under `firmware/gateway` is a separate CMake project cross-compiled in the same container, with host-side unit tests for the state machine and the limit functions, and a hardware-in-the-loop test job that is run manually on the bench rig.
+The hot-path math is written once in dependency-free C: `firmware/gateway` (state machine, heartbeat, limits, codec) for the microcontroller and `src/mcq_control/core` (controllers, bicycle model, speed profile) for the Jetson. Both build standalone with cmake and carry their own host tests; the ROS 2 nodes are thin wrappers, and the Python simulator loads `mcq_control/core` through ctypes so the same code is exercised off the kart. Board support for the gateway is cross-compiled in the same container; the hardware-in-the-loop job is run manually on the bench rig. The README lists the exact commands.
 
 ## 4. Logging
 

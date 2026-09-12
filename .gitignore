@@ -26,3 +26,8 @@ logs/
 training/data/raw/
 training/data/frames/
 training/data/manifest.jsonl
+
+# Host builds of the C libraries
+firmware/gateway/build/
+src/mcq_control/core/build/
+*.egg-info/

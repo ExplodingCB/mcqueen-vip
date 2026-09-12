@@ -8,6 +8,8 @@ Work: repository structure, Docker images for x86 and Jetson, CI that builds the
 
 Exit test: the full ROS 2 graph runs against `mcq_sim` on a laptop with a pure-pursuit controller following a synthetic oval; the gateway firmware passes the fault-injection list in a hardware-in-the-loop setup on the bench (Jetson or laptop over CAN to the board); a session from the simulator is recorded to MCAP and replayed.
 
+Progress 2026-09-12: done are the repository structure, the x86 Dockerfile, CI, `mcq_msgs`, the DBC, the gateway core with the software half of the fault-injection list passing on the host, the C control core, and the simulator closing the loop on the synthetic oval in both `FOLLOW` and `BOUNDARY` modes with zero interventions. Open are the ROS 2 node wrappers (simulator, controller, track server), the MCAP record and replay, the gateway board support and the bench rig.
+
 ## Phase 1: drive-by-wire and localization (mid October to November 2026)
 
 Work: actuators fitted and characterized (steering step and frequency response, throttle map from command to acceleration, brake map and stopping distance from 8 m/s), RC driving through the gateway, GNSS and IMU mounted and calibrated, InCORS NTRIP account, `state_estimator` with RTK and IMU and wheel speeds, the survey tool.

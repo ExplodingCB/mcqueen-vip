@@ -1,0 +1,6 @@
+# Load a track directory (track.csv plus track.yaml and optional raceline csv).
+string path
+---
+bool success
+string message
+string track_id

@@ -1,0 +1,7 @@
+# Software speed cap. Cannot exceed the gateway's flashed cap; the response
+# reports the value actually applied.
+float32 speed_cap
+---
+bool success
+float32 applied
+string message

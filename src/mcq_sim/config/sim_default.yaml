@@ -1,0 +1,62 @@
+# Every tunable of the simulator, planner and controllers. Units are SI, angles
+# in radians. Kart numbers are placeholders until the drive-by-wire phase
+# measures them; see docs/03-hardware.md section 1.
+vehicle:
+  wheelbase: 1.05          # m
+  understeer: 0.002        # s^2/m, extra steer per m/s^2 lateral accel
+  steer_max: 0.45          # rad at the front wheels
+  steer_rate_max: 3.14     # rad/s
+  steer_tau: 0.08          # s, first-order lag of the steering actuator
+  accel_max: 3.0           # m/s^2 at full throttle and low speed
+  v_max: 12.0              # m/s, speed where full throttle produces no acceleration
+  brake_decel_max: 6.0     # m/s^2 at full brake
+  rolling_decel: 0.3       # m/s^2 with both pedals released
+  drag: 0.004              # 1/m, decel = drag * v^2
+  gnss_noise: 0.02         # m, 1 sigma on the reported position
+
+planner:
+  horizon_s: 2.5
+  dt: 0.05
+  n_lateral: 9             # lateral offset candidates per cycle
+  kart_half_width: 0.7     # m, half of the widest point of the kart
+  margin: 0.2              # m, extra distance kept from each edge
+  w_ref: 0.5               # cost weight on squared deviation from the reference
+  w_jerk: 2.0              # cost weight on curvature change along the path
+  a_lat_max: 3.0
+  a_long_max: 2.0
+  a_brake_max: 3.0
+  v_cap: 5.0               # m/s, FOLLOW mode
+  v_min: 0.5
+  boundary_v_cap: 4.0      # m/s, BOUNDARY mode
+  boundary_range: 25.0     # m of perceived edges used ahead of the kart
+  min_path_length: 6.0     # m, horizon floor at low speed
+
+lateral:
+  k_v: 0.5                 # s, pure pursuit lookahead per m/s
+  l_min: 1.5               # m
+  l_max: 6.0               # m
+  a_lat_max: 4.0           # software curvature limit
+  jerk_lat_max: 6.0
+  steer_rate_max: 2.5      # rad/s, software rate limit (looser than the gateway)
+
+longitudinal:
+  k_p: 0.8                 # accel per m/s of speed error
+  k_i: 0.2
+  k_f: 1.0
+  accel_max: 2.5
+  decel_max: -4.0
+  stopping_speed: 0.5
+  stopping_decel: -1.5
+  throttle_per_accel: 0.33
+  brake_per_decel: 0.17
+  deadband: 0.05
+
+safety:
+  geofence_margin: 0.5     # m outside the edges before an urgent stop
+  trajectory_max_age: 0.2  # s
+
+harness:
+  dt: 0.01                 # simulation and control period
+  planner_period: 0.05
+  laps: 3
+  timeout_s: 600

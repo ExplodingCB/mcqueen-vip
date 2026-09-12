@@ -1,0 +1,27 @@
+# Repository-wide Python tooling configuration. Individual packages
+# (src/mcq_sim, training/data) carry their own dependency lists.
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["build", "install", "log", "training/data/raw", "training/data/frames"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY"]
+ignore = ["E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# The ingest tooling predates the lint config; reformat it in its own change.
+"training/data/*.py" = ["E501"]
+"training/data/tests/*.py" = ["E501"]
+
+[tool.ruff.format]
+exclude = ["training/data/*.py", "training/data/tests/*.py"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mcq_sim"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "training/data/tests"]
+pythonpath = ["src/mcq_sim"]
+addopts = "-q"

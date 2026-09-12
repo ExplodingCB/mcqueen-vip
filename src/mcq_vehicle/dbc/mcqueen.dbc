@@ -1,0 +1,126 @@
+VERSION "mcqueen-0.1"
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: JETSON GATEWAY
+
+
+BO_ 256 JETSON_COMMAND: 8 JETSON
+ SG_ STEERING_ANGLE : 0|16@1- (0.0001,0) [-3.2768|3.2767] "rad" GATEWAY
+ SG_ THROTTLE : 16|10@1+ (0.001,0) [0|1] "" GATEWAY
+ SG_ BRAKE : 26|10@1+ (0.001,0) [0|1] "" GATEWAY
+ SG_ LAT_ENABLE : 36|1@1+ (1,0) [0|1] "" GATEWAY
+ SG_ LONG_ENABLE : 37|1@1+ (1,0) [0|1] "" GATEWAY
+ SG_ REQUEST_URGENT_STOP : 38|1@1+ (1,0) [0|1] "" GATEWAY
+ SG_ RESERVED : 39|1@1+ (1,0) [0|1] "" GATEWAY
+ SG_ HEARTBEAT : 40|16@1+ (1,0) [0|65535] "" GATEWAY
+ SG_ CRC : 56|8@1+ (1,0) [0|255] "" GATEWAY
+
+BO_ 512 GATEWAY_STATUS: 8 GATEWAY
+ SG_ MODE : 0|4@1+ (1,0) [0|5] "" JETSON
+ SG_ TX_AUTO_SWITCH : 4|1@1+ (1,0) [0|1] "" JETSON
+ SG_ RC_LINK_OK : 5|1@1+ (1,0) [0|1] "" JETSON
+ SG_ REMOTE_ESTOP : 6|1@1+ (1,0) [0|1] "" JETSON
+ SG_ CONTACTOR_CLOSED : 7|1@1+ (1,0) [0|1] "" JETSON
+ SG_ FAULT_FLAGS : 8|16@1+ (1,0) [0|65535] "" JETSON
+ SG_ HEARTBEAT_ECHO : 24|16@1+ (1,0) [0|65535] "" JETSON
+ SG_ FRAMES_REJECTED : 40|8@1+ (1,0) [0|255] "" JETSON
+ SG_ SPEED : 48|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+
+BO_ 513 GATEWAY_STEERING: 8 GATEWAY
+ SG_ STEERING_ANGLE : 0|16@1- (0.0001,0) [-3.2768|3.2767] "rad" JETSON
+ SG_ STEERING_RATE : 16|16@1- (0.001,0) [-32.768|32.767] "rad/s" JETSON
+ SG_ BRAKE_PRESSURE : 32|10@1+ (0.001,0) [0|1] "" JETSON
+ SG_ THROTTLE_APPLIED : 42|6@1+ (0.016,0) [0|1] "" JETSON
+ SG_ STEERING_CMD_APPLIED : 48|16@1- (0.0001,0) [-3.2768|3.2767] "rad" JETSON
+
+BO_ 514 GATEWAY_WHEELS: 8 GATEWAY
+ SG_ WHEEL_SPEED_FL : 0|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+ SG_ WHEEL_SPEED_FR : 16|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+ SG_ WHEEL_SPEED_RL : 32|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+ SG_ WHEEL_SPEED_RR : 48|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+
+BO_ 515 GATEWAY_MOTOR: 8 GATEWAY
+ SG_ MOTOR_RPM : 0|16@1+ (1,0) [0|65535] "rpm" JETSON
+ SG_ MOTOR_CURRENT : 16|16@1- (0.1,0) [-3276.8|3276.7] "A" JETSON
+ SG_ MOTOR_POWER : 32|16@1- (1,0) [-32768|32767] "W" JETSON
+ SG_ BATTERY_VOLTAGE : 48|16@1+ (0.01,0) [0|655.35] "V" JETSON
+
+BO_ 516 GATEWAY_IMU_ACCEL: 8 GATEWAY
+ SG_ ACCEL_X : 0|16@1- (0.01,0) [-327.68|327.67] "m/s^2" JETSON
+ SG_ ACCEL_Y : 16|16@1- (0.01,0) [-327.68|327.67] "m/s^2" JETSON
+ SG_ ACCEL_Z : 32|16@1- (0.01,0) [-327.68|327.67] "m/s^2" JETSON
+ SG_ TIMESTAMP_MS : 48|16@1+ (1,0) [0|65535] "ms" JETSON
+
+BO_ 517 GATEWAY_IMU_GYRO: 8 GATEWAY
+ SG_ GYRO_X : 0|16@1- (0.001,0) [-32.768|32.767] "rad/s" JETSON
+ SG_ GYRO_Y : 16|16@1- (0.001,0) [-32.768|32.767] "rad/s" JETSON
+ SG_ GYRO_Z : 32|16@1- (0.001,0) [-32.768|32.767] "rad/s" JETSON
+ SG_ TIMESTAMP_MS : 48|16@1+ (1,0) [0|65535] "ms" JETSON
+
+BO_ 528 GATEWAY_LIMITS: 8 GATEWAY
+ SG_ STEER_ANGLE_MAX : 0|16@1+ (0.0001,0) [0|6.5535] "rad" JETSON
+ SG_ STEER_RATE_MAX : 16|16@1+ (0.001,0) [0|65.535] "rad/s" JETSON
+ SG_ SPEED_CAP : 32|16@1+ (0.01,0) [0|655.35] "m/s" JETSON
+ SG_ POWER_CAP : 48|16@1+ (1,0) [0|65535] "W" JETSON
+
+
+
+CM_ BU_ JETSON "NVIDIA Jetson AGX Orin running the ROS 2 graph (mcq_vehicle gateway_bridge).";
+CM_ BU_ GATEWAY "Safety gateway microcontroller. Owns the actuators; the Jetson never does.";
+CM_ BO_ 256 "Actuator request from the Jetson. 100 Hz. Rejected by the gateway when the CRC fails, the heartbeat does not advance, or any field is out of range. 50 ms without an accepted frame is an urgent stop.";
+CM_ SG_ 256 STEERING_ANGLE "Target angle at the front wheels, left positive.";
+CM_ SG_ 256 HEARTBEAT "Incrementing counter. The gateway accepts an advance of 1 to 5 over the last accepted value so that a single lost frame does not cause a stop, and rejects anything else.";
+CM_ SG_ 256 CRC "CRC-8 SAE J1850 (poly 0x1D, init 0xFF, xorout 0xFF) over bytes 0 to 6.";
+CM_ BO_ 512 "Gateway mode, faults and heartbeat echo. 100 Hz. Fault bit positions match firmware/gateway/include/gateway/faults.h and mcq_msgs/GatewayStatus.";
+CM_ SG_ 512 SPEED "Gateway's own speed estimate from the wheel sensors; the value it enforces the speed cap against.";
+CM_ BO_ 513 "Steering and brake feedback plus the command values the gateway actually applied after its limits. 100 Hz.";
+CM_ BO_ 514 "Wheel speeds from the hall sensors and motor encoder. 100 Hz.";
+CM_ BO_ 515 "Motor controller telemetry. Motor power is measured before the controller, as the AKS rules require for reporting. 100 Hz.";
+CM_ BO_ 516 "Gateway-hosted IMU, if fitted. 200 Hz. Timestamp is the gateway millisecond counter, wrapping.";
+CM_ BO_ 517 "Gateway-hosted IMU, if fitted. 200 Hz.";
+CM_ BO_ 528 "Limits flashed with the firmware. Readable so the Jetson can check its own caps against them; never writable over CAN. 1 Hz.";
+
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 10000;
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_ "GenMsgCycleTime" BO_ 256 10;
+BA_ "GenMsgCycleTime" BO_ 512 10;
+BA_ "GenMsgCycleTime" BO_ 513 10;
+BA_ "GenMsgCycleTime" BO_ 514 10;
+BA_ "GenMsgCycleTime" BO_ 515 10;
+BA_ "GenMsgCycleTime" BO_ 516 5;
+BA_ "GenMsgCycleTime" BO_ 517 5;
+BA_ "GenMsgCycleTime" BO_ 528 1000;
+
+VAL_ 512 MODE 0 "INIT" 1 "RC" 2 "AUTO" 3 "URGENT_STOP" 4 "DRIVETRAIN_OFF" 5 "FAULT" ;

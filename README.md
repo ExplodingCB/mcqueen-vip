@@ -4,7 +4,7 @@ Autonomous racing kart for the Purdue Grand Prix track at the Northwest Sports C
 
 The first target is a fully autonomous lap in under 60 seconds with no human intervention. The second target is a lap time competitive with the Autonomous Karting Series (AKS) field, which races on the same track every May. The stack must run from a track description alone (centerline plus widths, or perceived boundaries) so it can be tested on any paved loop before it ever sees the Purdue track.
 
-Status: proposal. This branch carries the design draft and no code yet. Read the docs in order.
+Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition, the ROS 2 message package, and a simulator that closes the loop on a synthetic oval. Read the docs in order, then `## Build and test` below.
 
 ## Quick facts
 
@@ -37,30 +37,61 @@ Status: proposal. This branch carries the design draft and no code yet. Read the
 
 A safety gateway microcontroller owns the actuators and only passes commands from the Jetson while a 100 Hz heartbeat is alive, the RC transmitter allows autonomous mode, and no e-stop is asserted. On the Jetson, a localization node fuses RTK GNSS, IMU, wheel speeds and steering angle into a 100 Hz pose in a local track frame. A track model (centerline and half-widths, surveyed with the kart itself or derived live from perceived boundaries) feeds an offline raceline optimizer and an online local planner that keeps the kart inside the boundaries and picks a speed profile. A 100 Hz controller turns the planned trajectory into steering angle, throttle and brake commands using controllers ported from openpilot. Everything is logged to MCAP and replayable in a bicycle-model simulator.
 
-## Proposed repository layout
+## Repository layout
+
+Directories marked `*` exist and have tests; the rest are planned.
 
 ```
 mcqueen-vip/
-  docs/                    design documents (this draft)
+  docs/                    design documents
   src/                     ROS 2 workspace packages
-    mcq_msgs/              message and service definitions
+    mcq_msgs/            * message and service definitions
     mcq_bringup/           launch files and parameter sets per kart and per track
-    mcq_vehicle/           CAN interface to the gateway: vehicle state in, actuator commands out
+    mcq_vehicle/         * CAN interface to the gateway; dbc/mcqueen.dbc is the frame definition
     mcq_localization/      GNSS + IMU + wheel + steering fusion, track frame management
     mcq_track/             track model, Frenet utilities, raceline loading, geofence
     mcq_planning/          local planner, boundary-only planner, speed profile
-    mcq_control/           lateral and longitudinal controllers, actuator limits
+    mcq_control/         * lateral and longitudinal controllers; core/ is a pure C library
     mcq_perception/        camera and LiDAR boundary extraction, kart detection (TensorRT)
-    mcq_sim/               bicycle-model simulator and replay harness
+    mcq_sim/             * kart model, Frenet planner prototype, closed-loop harness (Python)
     mcq_telemetry/         pit-side dashboard bridge, RCS black box interface
   firmware/
-    gateway/               safety gateway MCU firmware (watchdog, e-stop, RC passthrough, limits)
+    gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests
   tools/
     raceline/              wrapper around the TUM global race trajectory optimizer
     survey/                turn recorded RTK laps into a track model file
     logs/                  MCAP inspection and export scripts
   training/                PyTorch: perception models, learned dynamics, policy experiments (runs off-kart)
-    data/                  footage source catalog, YouTube fetch and frame extraction tooling
-  docker/                  x86 and Jetson development containers
-  tracks/                  track model files (centerline + widths) and generated racelines
+    data/                * footage source catalog, YouTube fetch and frame extraction tooling
+  docker/                * x86 development container (Jetson image to follow)
+  tracks/                * track model files (centerline + widths) and generated racelines
 ```
+
+## Build and test
+
+Everything below runs on a laptop with cmake, a C compiler and Python 3.10 or newer; ROS 2 is only needed for the message package.
+
+```
+pip install numpy scipy pyyaml pytest cantools ruff
+
+# Safety gateway core: fault-injection list on the host
+cmake -S firmware/gateway -B firmware/gateway/build && cmake --build firmware/gateway/build
+ctest --test-dir firmware/gateway/build --output-on-failure
+
+# Control core (PID, bicycle model, pure pursuit, limits, longitudinal, speed profile)
+cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
+cmake --build src/mcq_control/core/build
+ctest --test-dir src/mcq_control/core/build --output-on-failure
+
+# Simulator, DBC and training tooling tests
+python -m pytest -q
+
+# Phase 0 loop: two laps of the synthetic oval from the track file alone
+PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
+PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2 --mode BOUNDARY
+
+# ROS 2 interfaces (inside docker/x86 or any Jazzy install)
+colcon build --packages-select mcq_msgs mcq_sim
+```
+
+What runs on the kart is C: the gateway core on the microcontroller and the control core inside the Jetson's controller node. Python is for the simulator, the planner prototype, tools and training, and stays off the 100 Hz path.

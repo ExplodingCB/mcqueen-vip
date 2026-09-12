@@ -1,5 +1,7 @@
 # Architecture: the program
 
+2026-09-12: the control math of section 8 (PID, bicycle model, pure pursuit, curvature and rate limits, longitudinal state machine, speed profile) lives in `src/mcq_control/core` as a dependency-free C library that the ROS 2 node wraps and the simulator loads through ctypes. The planner of section 7.2 exists as a Python prototype in `mcq_sim` and is ported to C once its behavior settles; it samples two maneuver lengths (half and full horizon) per lateral offset, which the first draft of 7.2 did not mention. Message definitions of section 5 are in `src/mcq_msgs` with two additions, `GatewayStatus` and `GeofenceState`, and the CAN layout is in `src/mcq_vehicle/dbc/mcqueen.dbc`.
+
 This is the outline of the software as it should exist at the end of the first season. Package names match the repository layout in the README. Units are SI throughout; angles are radians; frames follow ROS REP 103 (x forward, y left, z up) and REP 105 (`map`, `odom`, `base_link`).
 
 ## 1. Runtime overview

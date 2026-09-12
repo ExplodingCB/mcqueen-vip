@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Everything that runs without ROS: the gateway firmware core, the C control
+  # core, the DBC, the simulator and the training tooling.
+  host:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy pyyaml pytest cantools ruff
+          pip install -r training/data/requirements.txt
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: clang-format
+        run: |
+          sudo apt-get install -y clang-format
+          clang-format --dry-run -Werror firmware/gateway/src/*.c firmware/gateway/include/gateway/*.h \
+            firmware/gateway/test/*.c src/mcq_control/core/src/*.c src/mcq_control/core/include/mcq/*.h \
+            src/mcq_control/core/test/*.c
+      - name: CAN vectors are in sync with the DBC
+        run: python firmware/gateway/tools/gen_can_vectors.py --check
+      - name: Gateway firmware host tests
+        run: |
+          cmake -S firmware/gateway -B firmware/gateway/build -DCMAKE_BUILD_TYPE=Debug
+          cmake --build firmware/gateway/build
+          ctest --test-dir firmware/gateway/build --output-on-failure
+      - name: Control core host tests
+        run: |
+          cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build src/mcq_control/core/build
+          ctest --test-dir src/mcq_control/core/build --output-on-failure
+      - name: Python tests (simulator, DBC, training tooling)
+        run: python -m pytest -q
+      - name: Phase 0 loop on the synthetic oval
+        run: |
+          PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
+          PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 1 --mode BOUNDARY
+
+  # The ROS 2 interface package builds in the Jazzy container.
+  ros2:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build mcq_msgs and mcq_sim
+        shell: bash
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-yaml python3-pytest
+          source /opt/ros/jazzy/setup.bash
+          rosdep update || true
+          colcon build --packages-select mcq_msgs mcq_sim --event-handlers console_direct+
+          source install/setup.bash
+          ros2 interface show mcq_msgs/msg/VehicleCommand

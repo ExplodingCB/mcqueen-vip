@@ -1,5 +1,7 @@
 # Safety
 
+2026-09-12: the gateway core in `firmware/gateway` implements sections 2 to 4 and its host tests cover the software items of section 7. Three details were decided in code: the heartbeat accepts a counter advance of 1 to 5 over the last accepted frame (a single lost or corrupted frame is dropped, a frozen or replayed counter is rejected, 50 ms without an accepted frame is still the timeout); re-entering `AUTO` after any exit requires the transmitter switch to pass through `RC`, so a switch left in `AUTO` cannot re-arm the kart; and on remote e-stop the contactor output opens immediately (the e-stop relay is in the contactor circuit anyway) while the brake ramp runs, with the transition to `DRIVETRAIN_OFF` at standstill.
+
 The kart weighs at least 125 kg, reaches 12 m/s in a few seconds, and is driven by software written by students on a semester schedule. The design assumption is that the Jetson software is wrong until proven otherwise, and that being wrong must end in a stop, not a crash.
 
 ## 1. Principles

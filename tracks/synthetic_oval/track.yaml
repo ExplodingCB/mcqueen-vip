@@ -1,0 +1,15 @@
+track_id: synthetic_oval
+closed: true
+datum:
+  latitude: 0.0
+  longitude: 0.0
+  height: 0.0
+start_finish:
+  a:
+  - -30.0
+  - -20.0
+  b:
+  - -30.0
+  - -10.0
+survey_date: synthetic
+description: oval, straights 60.0 m, radius 15.0 m, width 5.0 m
