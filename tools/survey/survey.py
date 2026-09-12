@@ -179,12 +179,15 @@ def read_drive_mcap(path: Path, topic: str, datum=None) -> np.ndarray:
     """Positions from an MCAP log: mcq_msgs/EgoState (pose in map) or
     sensor_msgs/NavSatFix (converted with the datum)."""
     try:
-        from mcap_ros2.reader import read_ros2_messages
+        from mcap.reader import make_reader
+        from mcap_ros2.decoder import DecoderFactory
     except ImportError as exc:  # pragma: no cover - depends on optional packages
         raise SystemExit("pip install mcap mcap-ros2-support to read MCAP logs") from exc
     pts = []
-    for m in read_ros2_messages(str(path), topics=[topic]):
-        msg = m.ros_msg
+    with open(path, "rb") as f:
+        reader = make_reader(f, decoder_factories=[DecoderFactory()])
+        messages = [d for _s, _c, _m, d in reader.iter_decoded_messages(topics=[topic])]
+    for msg in messages:
         if hasattr(msg, "latitude"):
             if datum is None:
                 raise ValueError("NavSatFix input needs --datum lat lon height")
