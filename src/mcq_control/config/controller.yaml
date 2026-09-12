@@ -1,0 +1,30 @@
+# Controller node parameters. Same names and values as the lateral and
+# longitudinal sections of mcq_sim/config/sim_default.yaml; kart-specific
+# overlays live in mcq_bringup once the kart is measured.
+controller:
+  ros__parameters:
+    rate_hz: 100.0
+    trajectory_max_age: 0.2
+    ego_max_age: 0.1
+    wheelbase: 1.05
+    understeer: 0.002
+    steer_max: 0.45
+    rolling_decel: 0.3
+    lateral:
+      k_v: 0.5
+      l_min: 1.5
+      l_max: 6.0
+      a_lat_max: 4.0
+      jerk_lat_max: 6.0
+      steer_rate_max: 2.5
+    longitudinal:
+      k_p: 0.8
+      k_i: 0.2
+      k_f: 1.0
+      accel_max: 2.5
+      decel_max: -4.0
+      stopping_speed: 0.5
+      stopping_decel: -1.5
+      throttle_per_accel: 0.33
+      brake_per_decel: 0.17
+      deadband: 0.05

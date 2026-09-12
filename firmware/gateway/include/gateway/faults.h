@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum gw_fault {
   GW_FAULT_HEARTBEAT_TIMEOUT = 1u << 0,
   GW_FAULT_HEARTBEAT_COUNTER = 1u << 1,
@@ -36,5 +40,9 @@ enum gw_fault {
    GW_FAULT_STEER_ANGLE_LIMIT | GW_FAULT_SELF_TEST)
 
 typedef uint16_t gw_faults_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GATEWAY_FAULTS_H

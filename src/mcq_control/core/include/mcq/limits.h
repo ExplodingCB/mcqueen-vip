@@ -6,6 +6,10 @@
 #ifndef MCQ_LIMITS_H
 #define MCQ_LIMITS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   float a_lat_max;       // m/s^2
@@ -24,5 +28,9 @@ float mcq_limit_curvature(
 float mcq_rate_limit(float target, float prev, float rate_max, float dt);
 
 float mcq_clampf(float v, float lo, float hi);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_LIMITS_H

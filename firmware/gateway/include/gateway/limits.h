@@ -9,6 +9,10 @@
 
 #include "gateway/faults.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Clamps |angle| to the mechanical limit. Sets GW_FAULT_STEER_ANGLE_LIMIT when
 // it had to.
 float gw_limit_steer_angle(float angle, gw_faults_t * faults);
@@ -32,5 +36,9 @@ float gw_limit_speed(float throttle, float speed, gw_faults_t * faults);
 
 // Drivetrain power above the cap cuts throttle (GW_FAULT_POWER_CAP).
 float gw_limit_power(float throttle, float motor_power, gw_faults_t * faults);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GATEWAY_LIMITS_H

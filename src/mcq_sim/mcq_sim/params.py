@@ -8,7 +8,20 @@ from typing import Any
 
 import yaml
 
-DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "sim_default.yaml"
+
+def _default_config() -> Path:
+    source = Path(__file__).resolve().parent.parent / "config" / "sim_default.yaml"
+    if source.exists():
+        return source
+    try:  # installed by colcon: the yaml is in the package share directory
+        from ament_index_python.packages import get_package_share_directory
+
+        return Path(get_package_share_directory("mcq_sim")) / "config" / "sim_default.yaml"
+    except Exception:  # noqa: BLE001 - no ROS; the source path is the best answer
+        return source
+
+
+DEFAULT_CONFIG = _default_config()
 
 
 @dataclass

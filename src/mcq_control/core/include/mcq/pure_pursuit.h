@@ -11,6 +11,10 @@
 
 #include "mcq/bicycle.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   float k_v;    // s, lookahead per unit speed
@@ -40,5 +44,9 @@ typedef struct
 bool mcq_pure_pursuit(
   const mcq_pure_pursuit_params_t * pp, const mcq_bicycle_params_t * bike, const mcq_path_t * path,
   float x, float y, float yaw, float speed, mcq_pure_pursuit_result_t * out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_PURE_PURSUIT_H

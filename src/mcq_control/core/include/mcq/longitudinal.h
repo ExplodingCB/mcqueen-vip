@@ -9,6 +9,10 @@
 
 #include "mcq/pid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   MCQ_LONG_OFF = 0,
   MCQ_LONG_STOPPING = 1,
@@ -49,5 +53,9 @@ float mcq_long_update(
 
 // Maps a signed acceleration to throttle and brake in 0..1 with a deadband.
 void mcq_actuator_map(const mcq_actuator_map_t * m, float accel, float * throttle, float * brake);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_LONGITUDINAL_H

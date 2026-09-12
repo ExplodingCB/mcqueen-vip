@@ -34,4 +34,12 @@
 // Urgent stop reset.
 #define GW_URGENT_RESET_TIMEOUT_MS 30000u  // standstill without operator reset: DRIVETRAIN_OFF
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  // GATEWAY_CONFIG_H

@@ -19,6 +19,10 @@
 #include "gateway/faults.h"
 #include "gateway/heartbeat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   GW_MODE_INIT = 0,
   GW_MODE_RC = 1,
@@ -83,5 +87,9 @@ typedef struct
 void gw_init(gw_t * gw, uint32_t now_ms);
 void gw_step(gw_t * gw, const gw_inputs_t * in);
 const char * gw_mode_name(gw_mode_t mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GATEWAY_STATE_MACHINE_H

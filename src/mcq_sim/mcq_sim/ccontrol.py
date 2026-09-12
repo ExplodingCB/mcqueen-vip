@@ -136,6 +136,14 @@ def _find_or_build() -> Path:
     env = os.environ.get("MCQ_CONTROL_CORE_LIB")
     if env and Path(env).exists():
         return Path(env)
+    try:  # installed by colcon next to the mcq_control package
+        from ament_index_python.packages import get_package_prefix
+
+        installed = Path(get_package_prefix("mcq_control")) / "lib" / LIB_NAME
+        if installed.exists():
+            return installed
+    except Exception:  # noqa: BLE001 - no ROS, or package not installed
+        pass
     lib = BUILD_DIR / LIB_NAME
     if lib.exists():
         return lib

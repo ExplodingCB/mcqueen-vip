@@ -10,6 +10,10 @@
 #define GW_CMD_FRAME_ID 0x100u
 #define GW_CMD_FRAME_LEN 8u
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   float steering_angle;  // rad at the front wheels, left positive
@@ -42,5 +46,9 @@ void gw_command_encode(const gw_command_t * cmd, uint8_t frame[GW_CMD_FRAME_LEN]
 
 // Field-level validity without CAN framing (for commands arriving over USB).
 bool gw_command_fields_valid(const gw_command_t * cmd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GATEWAY_COMMAND_H

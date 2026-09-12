@@ -4,6 +4,10 @@
 #ifndef MCQ_SPEED_PROFILE_H
 #define MCQ_SPEED_PROFILE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   float a_lat_max;    // m/s^2
@@ -20,5 +24,9 @@ typedef struct
 void mcq_speed_profile(
   const mcq_speed_profile_params_t * p, const float * s, const float * kappa, const float * v_ref,
   int n, float v0, float v_end, float * v_out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_SPEED_PROFILE_H

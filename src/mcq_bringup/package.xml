@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>mcq_sim</name>
+  <name>mcq_bringup</name>
   <version>0.1.0</version>
-  <description>Bicycle-model kart simulator, Frenet planner prototype and closed-loop harness. Runs off the kart; loads the C control core through ctypes.</description>
+  <description>Launch files and parameter sets per kart and per environment (sim, bench, track).</description>
   <maintainer email="culbertsonprime@gmail.com">Chase Culbertson</maintainer>
   <license>MIT</license>
 
-  <depend>python3-numpy</depend>
-  <depend>python3-scipy</depend>
-  <depend>python3-yaml</depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>mcq_msgs</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>mcq_sim</exec_depend>
   <exec_depend>mcq_control</exec_depend>
-  <test_depend>python3-pytest</test_depend>
 
   <export>
-    <build_type>ament_python</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

@@ -49,18 +49,46 @@ jobs:
           PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
           PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 1 --mode BOUNDARY
 
-  # The ROS 2 interface package builds in the Jazzy container.
+  # The ROS 2 packages build in the Jazzy container, the control core tests run
+  # under colcon test, and the Phase 0 graph (simulator, planner, controller)
+  # drives the synthetic oval.
   ros2:
     runs-on: ubuntu-24.04
     container: ros:jazzy-ros-base
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-      - name: Build mcq_msgs and mcq_sim
-        shell: bash
+      - name: Install dependencies
         run: |
-          apt-get update && apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-yaml python3-pytest
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential cmake python3-numpy python3-scipy python3-yaml python3-pytest
+          rosdep update --rosdistro jazzy
+          rosdep install --from-paths src --ignore-src -y --rosdistro jazzy
+      - name: Build
+        run: |
           source /opt/ros/jazzy/setup.bash
-          rosdep update || true
-          colcon build --packages-select mcq_msgs mcq_sim --event-handlers console_direct+
+          colcon build --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
+      - name: Test
+        run: |
+          source /opt/ros/jazzy/setup.bash
           source install/setup.bash
+          colcon test --packages-select mcq_control --event-handlers console_direct+
+          colcon test-result --verbose
           ros2 interface show mcq_msgs/msg/VehicleCommand
+      - name: Graph smoke test on the synthetic oval
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          ros2 launch mcq_bringup sim.launch.py > launch.log 2>&1 &
+          LAUNCH_PID=$!
+          sleep 5
+          set +e
+          timeout 120 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 100
+          RC=$?
+          set -e
+          kill -INT $LAUNCH_PID || true
+          sleep 3
+          echo "--- launch log"; cat launch.log
+          exit $RC

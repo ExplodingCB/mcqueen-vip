@@ -12,6 +12,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   bool synced;
@@ -31,5 +35,9 @@ bool gw_heartbeat_healthy(gw_heartbeat_t * hb, uint32_t now_ms);
 
 // Milliseconds of uninterrupted healthy heartbeat, 0 when unhealthy.
 uint32_t gw_heartbeat_continuous_ms(gw_heartbeat_t * hb, uint32_t now_ms);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GATEWAY_HEARTBEAT_H

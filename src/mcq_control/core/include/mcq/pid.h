@@ -12,6 +12,10 @@
 
 #define MCQ_PID_MAX_BREAKPOINTS 8
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   int n;                             // number of breakpoints (1 = constant gain)
@@ -51,5 +55,9 @@ void mcq_pid_reset(mcq_pid_t * pid);
 // while the actuator is not yet under control, matching openpilot).
 float mcq_pid_update(
   mcq_pid_t * pid, float error, float speed, float feedforward, bool freeze_integrator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_PID_H

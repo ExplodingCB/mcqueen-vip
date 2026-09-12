@@ -17,5 +17,11 @@ setup(
     maintainer_email="culbertsonprime@gmail.com",
     description="Kart simulator, planner prototype and closed-loop harness for McQueen VIP.",
     license="MIT",
-    entry_points={"console_scripts": ["mcq_sim = mcq_sim.__main__:main"]},
+    entry_points={
+        "console_scripts": [
+            "mcq_sim = mcq_sim.__main__:main",
+            "sim_node = mcq_sim.sim_node:main",
+            "planner_node = mcq_sim.planner_node:main",
+        ]
+    },
 )

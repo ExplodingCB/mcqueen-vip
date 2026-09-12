@@ -5,6 +5,10 @@
 #ifndef MCQ_BICYCLE_H
 #define MCQ_BICYCLE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
   float wheelbase;   // m
@@ -33,5 +37,9 @@ void mcq_kinematic_step(
   const mcq_bicycle_params_t * p, mcq_kinematic_state_t * s, float steer, float accel, float dt);
 
 float mcq_wrap_angle(float a);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // MCQ_BICYCLE_H
