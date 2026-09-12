@@ -101,13 +101,6 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
           src/mcq_bringup/test/graph_smoke.sh control
-      - name: Graph smoke test with recording, UDP-only Fast DDS profile (experiment)
-        continue-on-error: true
-        run: |
-          source /opt/ros/jazzy/setup.bash
-          source install/setup.bash
-          RECORD=true BAG=/tmp/phase0_bag_udp FASTDDS_PROFILE=$PWD/src/mcq_bringup/config/fastdds_udp_only.xml \
-            src/mcq_bringup/test/graph_smoke.sh record_udp
       - name: Session was recorded to MCAP
         run: |
           source /opt/ros/jazzy/setup.bash
