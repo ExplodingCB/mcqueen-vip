@@ -35,4 +35,12 @@ if(GW_BUILD_TESTS)
     target_compile_options(test_${name} PRIVATE -Wall -Wextra -Werror)
     add_test(NAME ${name} COMMAND test_${name})
   endforeach()
+
+  # Cross-check against the code cantools generates from the DBC.
+  set(generated_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../src/mcq_vehicle/generated)
+  add_executable(test_generated_codec test/test_generated_codec.c ${generated_dir}/mcqueen.c)
+  target_include_directories(test_generated_codec PRIVATE test ${generated_dir})
+  target_link_libraries(test_generated_codec PRIVATE gateway_core)
+  target_compile_options(test_generated_codec PRIVATE -Wall -Wextra -Werror)
+  add_test(NAME generated_codec COMMAND test_generated_codec)
 endif()

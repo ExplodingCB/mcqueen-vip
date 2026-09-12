@@ -75,7 +75,13 @@ def test_command_roundtrip(db):
         assert decoded[k] == pytest.approx(v, abs=1e-3)
 
 
-def test_firmware_vectors_up_to_date():
-    gen = REPO / "firmware" / "gateway" / "tools" / "gen_can_vectors.py"
-    proc = subprocess.run([sys.executable, str(gen), "--check"], capture_output=True, text=True)
+@pytest.mark.parametrize(
+    "script",
+    [
+        REPO / "firmware" / "gateway" / "tools" / "gen_can_vectors.py",
+        REPO / "src" / "mcq_vehicle" / "tools" / "gen_can_code.py",
+    ],
+)
+def test_generated_artifacts_up_to_date(script):
+    proc = subprocess.run([sys.executable, str(script), "--check"], capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr
