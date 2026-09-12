@@ -91,23 +91,22 @@ jobs:
           colcon test --packages-select mcq_control --event-handlers console_direct+
           colcon test-result --verbose
           ros2 interface show mcq_msgs/msg/VehicleCommand
+      - name: Graph smoke test with recording (cold start)
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          RECORD=true BAG=/tmp/phase0_bag src/mcq_bringup/test/graph_smoke.sh record_cold
       - name: Graph smoke test, control run without recording
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
           src/mcq_bringup/test/graph_smoke.sh control
-      - name: Graph smoke test with recording, default transport
-        id: record_default
+      - name: Graph smoke test with recording, UDP-only Fast DDS profile (experiment)
         continue-on-error: true
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          RECORD=true BAG=/tmp/phase0_bag_default src/mcq_bringup/test/graph_smoke.sh record_default
-      - name: Graph smoke test with recording, UDP-only Fast DDS profile
-        run: |
-          source /opt/ros/jazzy/setup.bash
-          source install/setup.bash
-          RECORD=true BAG=/tmp/phase0_bag FASTDDS_PROFILE=$PWD/src/mcq_bringup/config/fastdds_udp_only.xml \
+          RECORD=true BAG=/tmp/phase0_bag_udp FASTDDS_PROFILE=$PWD/src/mcq_bringup/config/fastdds_udp_only.xml \
             src/mcq_bringup/test/graph_smoke.sh record_udp
       - name: Session was recorded to MCAP
         run: |

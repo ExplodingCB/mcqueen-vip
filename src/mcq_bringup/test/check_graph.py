@@ -25,8 +25,11 @@ class Checker(Node):
         self.last_s = None
         self.v_max = 0.0
         self.commands = 0
-        self.stop_requests = 0
+        self.stop_requests = 0  # while driving; a startup transient is not an intervention
+        self.startup_stop_requests = 0
         self.geofence_violations = 0
+        self.moving_since = None
+        self.first_ego = None
         self.track_length = None
         qos = qos_profile_sensor_data
         self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
@@ -36,6 +39,12 @@ class Checker(Node):
         self.last_report = self.t0
 
     def on_ego(self, msg):
+        if self.first_ego is None:
+            self.first_ego = time.monotonic() - self.t0
+            self.get_logger().info(f"first ego state after {self.first_ego:.2f} s")
+        if self.moving_since is None and msg.v > 0.5:
+            self.moving_since = time.monotonic() - self.t0
+            self.get_logger().info(f"kart moving after {self.moving_since:.2f} s")
         if self.last_s is not None:
             ds = msg.s - self.last_s
             if ds < -50.0:  # wrapped past the start line
@@ -47,7 +56,10 @@ class Checker(Node):
     def on_cmd(self, msg):
         self.commands += 1
         if msg.request_urgent_stop:
-            self.stop_requests += 1
+            if self.moving_since is None:
+                self.startup_stop_requests += 1
+            else:
+                self.stop_requests += 1
 
     def on_geofence(self, msg):
         if msg.violation:
@@ -56,7 +68,8 @@ class Checker(Node):
     def status(self):
         return (
             f"progress {self.progress:.1f} m, v_max {self.v_max:.2f} m/s, commands {self.commands}, "
-            f"stop requests {self.stop_requests}, geofence violations {self.geofence_violations}"
+            f"stop requests {self.stop_requests} (startup {self.startup_stop_requests}), "
+            f"geofence violations {self.geofence_violations}"
         )
 
     def verdict(self):

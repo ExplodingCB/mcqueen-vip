@@ -37,17 +37,21 @@ rc=$?
 
 # Stop the launch and everything under it, then wait until the graph is empty.
 kill -INT -- -"$launch_pid" 2>/dev/null || kill -INT "$launch_pid" 2>/dev/null || true
-for _ in $(seq 1 20); do
+for _ in $(seq 1 30); do
   if ! kill -0 "$launch_pid" 2>/dev/null; then break; fi
   sleep 0.5
 done
+kill -TERM -- -"$launch_pid" 2>/dev/null || true
+sleep 2
 kill -KILL -- -"$launch_pid" 2>/dev/null || true
-pkill -KILL -f "mcq_sim|controller_node|rosbag2|check_graph" 2>/dev/null || true
-for _ in $(seq 1 20); do
+pkill -KILL -f "ros2 bag record|mcq_sim/lib|controller_node|check_graph" 2>/dev/null || true
+for _ in $(seq 1 40); do
   if [ "$(ros2 node list 2>/dev/null | wc -l)" -eq 0 ]; then break; fi
   sleep 0.5
 done
-echo "nodes left after shutdown: $(ros2 node list 2>/dev/null | tr '\n' ' ')"
+left=$(ros2 node list 2>/dev/null | tr '\n' ' ')
+echo "nodes left after shutdown: ${left:-none}"
+if [ -n "$left" ]; then ps aux | grep -v grep | grep -E "ros2|mcq|controller" || true; fi
 
 echo "--- launch log"; cat "launch_$label.log"
 for f in hz_ego hz_cmd hz_traj top info_ego nodes; do
