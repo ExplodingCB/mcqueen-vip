@@ -14,18 +14,41 @@ if [ -n "${FASTDDS_PROFILE:-}" ]; then
   export FASTRTPS_DEFAULT_PROFILES_FILE=$FASTDDS_PROFILE
 fi
 echo "=== graph smoke test: $label (${launch_args[*]:-no args}) RMW=${RMW_IMPLEMENTATION:-default} profile=${FASTRTPS_DEFAULT_PROFILES_FILE:-none}"
-ros2 launch mcq_bringup sim.launch.py "${launch_args[@]}" > "launch_$label.log" 2>&1 &
+
+# Nothing from a previous run may still be on the graph.
+leftovers=$(ros2 node list 2>/dev/null | wc -l)
+if [ "$leftovers" -ne 0 ]; then
+  echo "leftover nodes before start:"; ros2 node list
+  exit 2
+fi
+
+# The launch gets its own process group so the whole tree can be signalled.
+setsid ros2 launch mcq_bringup sim.launch.py "${launch_args[@]}" > "launch_$label.log" 2>&1 &
 launch_pid=$!
-sleep 4
-# Diagnostics run alongside the checker.
-( timeout 8 ros2 topic hz /ego_state --window 100 > "hz_ego_$label.txt" 2>&1 ) &
-( timeout 8 ros2 topic hz /vehicle_command --window 100 > "hz_cmd_$label.txt" 2>&1 ) &
-( timeout 8 ros2 topic hz /trajectory --window 20 > "hz_traj_$label.txt" 2>&1 ) &
-( sleep 3; top -b -n 1 -o %CPU | head -25 > "top_$label.txt" 2>&1; ros2 topic info -v /ego_state > "info_ego_$label.txt" 2>&1; ros2 node list > "nodes_$label.txt" 2>&1 ) &
+sleep 1
+# Diagnostics from the first seconds: are the topics flowing at all?
+( timeout 12 ros2 topic hz /ego_state --window 100 > "hz_ego_$label.txt" 2>&1 ) &
+( timeout 12 ros2 topic hz /vehicle_command --window 100 > "hz_cmd_$label.txt" 2>&1 ) &
+( timeout 12 ros2 topic hz /trajectory --window 20 > "hz_traj_$label.txt" 2>&1 ) &
+( sleep 6; top -b -n 1 -o %CPU | head -25 > "top_$label.txt" 2>&1; ros2 topic info -v /ego_state > "info_ego_$label.txt" 2>&1; ros2 node list > "nodes_$label.txt" 2>&1 ) &
+sleep 3
 timeout 120 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 100
 rc=$?
-kill -INT $launch_pid 2>/dev/null || true
-sleep 5
+
+# Stop the launch and everything under it, then wait until the graph is empty.
+kill -INT -- -"$launch_pid" 2>/dev/null || kill -INT "$launch_pid" 2>/dev/null || true
+for _ in $(seq 1 20); do
+  if ! kill -0 "$launch_pid" 2>/dev/null; then break; fi
+  sleep 0.5
+done
+kill -KILL -- -"$launch_pid" 2>/dev/null || true
+pkill -KILL -f "mcq_sim|controller_node|rosbag2|check_graph" 2>/dev/null || true
+for _ in $(seq 1 20); do
+  if [ "$(ros2 node list 2>/dev/null | wc -l)" -eq 0 ]; then break; fi
+  sleep 0.5
+done
+echo "nodes left after shutdown: $(ros2 node list 2>/dev/null | tr '\n' ' ')"
+
 echo "--- launch log"; cat "launch_$label.log"
 for f in hz_ego hz_cmd hz_traj top info_ego nodes; do
   echo "--- $f"; cat "${f}_$label.txt" 2>/dev/null | tail -30

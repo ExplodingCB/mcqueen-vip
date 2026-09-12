@@ -77,10 +77,22 @@ public:
     // must never back-pressure the control loop. Freshness is checked by age.
     const auto qos = rclcpp::SensorDataQoS();
     pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
-    sub_traj_ = create_subscription<Trajectory>(
-      "trajectory", qos, [this](const Trajectory::SharedPtr msg) { traj_ = msg; });
-    sub_ego_ = create_subscription<EgoState>(
-      "ego_state", qos, [this](const EgoState::SharedPtr msg) { ego_ = msg; });
+    sub_traj_ = create_subscription<Trajectory>("trajectory", qos, [this](const Trajectory::SharedPtr msg) {
+      if (!traj_) {
+        RCLCPP_INFO(
+          get_logger(), "first trajectory received, %.0f ms old",
+          (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
+      }
+      traj_ = msg;
+    });
+    sub_ego_ = create_subscription<EgoState>("ego_state", qos, [this](const EgoState::SharedPtr msg) {
+      if (!ego_) {
+        RCLCPP_INFO(
+          get_logger(), "first ego state received, %.0f ms old",
+          (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
+      }
+      ego_ = msg;
+    });
     sub_vehicle_ = create_subscription<VehicleState>(
       "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
     timer_ = create_wall_timer(
