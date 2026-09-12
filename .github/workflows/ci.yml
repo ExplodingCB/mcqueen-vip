@@ -63,7 +63,12 @@ jobs:
   # drives the synthetic oval.
   ros2:
     runs-on: ubuntu-24.04
-    container: ros:jazzy-ros-base
+    container:
+      image: ros:jazzy-ros-base
+      # Fast DDS uses shared memory between processes on one host; Docker's
+      # default 64 MB /dev/shm is not enough once the recorder subscribes to
+      # every topic and latencies climb into the hundreds of milliseconds.
+      options: --shm-size=1g
     defaults:
       run:
         shell: bash
