@@ -12,6 +12,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(GW_BUILD_TESTS "Build host-side unit tests" ON)
+option(GW_BUILD_HOST_SIM "Build the SocketCAN host simulator (Linux only)" ON)
 
 add_library(gateway_core STATIC
   src/crc8.c
@@ -43,4 +44,13 @@ if(GW_BUILD_TESTS)
   target_link_libraries(test_generated_codec PRIVATE gateway_core)
   target_compile_options(test_generated_codec PRIVATE -Wall -Wextra -Werror)
   add_test(NAME generated_codec COMMAND test_generated_codec)
+endif()
+
+if(GW_BUILD_HOST_SIM AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(generated_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../src/mcq_vehicle/generated)
+  add_executable(gateway_host host/gateway_host.c ${generated_dir}/mcqueen.c)
+  target_include_directories(gateway_host PRIVATE ${generated_dir})
+  target_link_libraries(gateway_host PRIVATE gateway_core)
+  target_compile_options(gateway_host PRIVATE -Wall -Wextra -Werror)
+  target_compile_definitions(gateway_host PRIVATE _GNU_SOURCE)
 endif()

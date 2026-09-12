@@ -18,7 +18,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy scipy pyyaml pytest cantools ruff
+          pip install numpy scipy pyyaml pytest cantools ruff python-can
           pip install -r training/data/requirements.txt
       - name: Lint
         run: |
@@ -44,8 +44,15 @@ jobs:
           cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
           cmake --build src/mcq_control/core/build
           ctest --test-dir src/mcq_control/core/build --output-on-failure
-      - name: Python tests (simulator, DBC, training tooling)
-        run: python -m pytest -q
+      - name: Virtual CAN interface for the gateway host simulator
+        run: |
+          if sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0; then
+            echo "vcan0 is up"
+          else
+            echo "::warning::vcan unavailable on this runner; the gateway_host bus test will be skipped"
+          fi
+      - name: Python tests (simulator, DBC, survey, gateway over vcan, training tooling)
+        run: python -m pytest -q -rs
       - name: Phase 0 loop on the synthetic oval
         run: |
           PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
