@@ -56,11 +56,11 @@ mcqueen-vip/
     mcq_sim/             * kart model, Frenet planner prototype, closed-loop harness (Python)
     mcq_telemetry/         pit-side dashboard bridge, RCS black box interface
   firmware/
-    gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests
+    gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests, SocketCAN host build
   tools/
     raceline/              wrapper around the TUM global race trajectory optimizer
     survey/              * turn recorded RTK edge drives into a track model file
-    logs/                  MCAP inspection and export scripts
+    logs/                * MCAP lap report; message definitions for reading logs without ROS
   training/                PyTorch: perception models, learned dynamics, policy experiments (runs off-kart)
     data/                * footage source catalog, YouTube fetch and frame extraction tooling
   docker/                * x86 development container (Jetson image to follow)
@@ -89,6 +89,11 @@ python -m pytest -q
 # Phase 0 loop: two laps of the synthetic oval from the track file alone
 PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
 PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2 --mode BOUNDARY
+
+# Gateway core on a virtual CAN bus, driven from Python (the bench rig without hardware)
+sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0
+./firmware/gateway/build/gateway_host --interface vcan0 &
+python -m pytest -q firmware/gateway/host
 
 # ROS 2 graph (inside docker/x86 or any Jazzy install): simulator, planner, controller
 rosdep install --from-paths src --ignore-src -y

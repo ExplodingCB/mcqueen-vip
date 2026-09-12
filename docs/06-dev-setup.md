@@ -30,11 +30,15 @@ C and C++ packages use `ament_cmake` with warnings as errors, `clang-format` (th
 
 The hot-path math is written once in dependency-free C: `firmware/gateway` (state machine, heartbeat, limits, codec) for the microcontroller and `src/mcq_control/core` (controllers, bicycle model, speed profile) for the Jetson. Both build standalone with cmake and carry their own host tests; the ROS 2 nodes are thin wrappers, and the Python simulator loads `mcq_control/core` through ctypes so the same code is exercised off the kart. Board support for the gateway is cross-compiled in the same container; the hardware-in-the-loop job is run manually on the bench rig. The README lists the exact commands.
 
+### Bench without hardware
+
+`firmware/gateway/build/gateway_host` is the gateway core running on a Linux machine against a SocketCAN interface, with fault-injection commands on stdin. On a laptop, `vcan0` stands in for the bus: the ROS 2 graph's `gateway_bridge` node talks to it exactly as it will talk to the board, and `firmware/gateway/host/test_gateway_host.py` walks the mode transitions over the bus from Python. On the bench rig the same binary runs on a USB CAN adapter next to the real actuators until the board firmware takes over.
+
 ## 4. Logging
 
 `rosbag2` with the MCAP storage plugin (the Jazzy default) records every topic. Camera topics are recorded as compressed images. Logs are named `YYYY-MM-DD_HHMM_<track>_<kart>_<purpose>.mcap` and live on the Jetson's NVMe until copied to the team's shared storage; they are never committed to git. A `README.md` next to each log records track, weather, parameter set (git hash and YAML hash), what was tested, what broke, and who was operating.
 
-Foxglove opens MCAP files directly and connects live through `foxglove_bridge`. Layouts for the pit dashboard, the localization debug view and the control debug view are checked into `src/mcq_telemetry/layouts/`.
+`tools/logs/lap_report.py` summarizes a session (laps, deviation, speed, stop requests, gateway modes) without ROS installed; `tools/survey` turns edge drives from a log into a track directory. Foxglove opens MCAP files directly and connects live through `foxglove_bridge`. Layouts for the pit dashboard, the localization debug view and the control debug view are checked into `src/mcq_telemetry/layouts/`.
 
 ## 5. Conventions
 
