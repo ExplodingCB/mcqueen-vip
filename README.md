@@ -4,7 +4,7 @@ Autonomous racing kart for the Purdue Grand Prix track at the Northwest Sports C
 
 The first target is a fully autonomous lap in under 60 seconds with no human intervention. The second target is a lap time competitive with the Autonomous Karting Series (AKS) field, which races on the same track every May. The stack must run from a track description alone (centerline plus widths, or perceived boundaries) so it can be tested on any paved loop before it ever sees the Purdue track.
 
-Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition, the ROS 2 message package, and a simulator that closes the loop on a synthetic oval. Read the docs in order, then `## Build and test` below.
+Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition with generated codecs and a SocketCAN bridge, the ROS 2 message package, a simulator that closes the loop on a synthetic oval both as a Python harness and as the ROS 2 graph (simulator, planner, controller nodes), and the survey tool. Read the docs in order, then `## Build and test` below.
 
 ## Quick facts
 
@@ -46,8 +46,8 @@ mcqueen-vip/
   docs/                    design documents
   src/                     ROS 2 workspace packages
     mcq_msgs/            * message and service definitions
-    mcq_bringup/           launch files and parameter sets per kart and per track
-    mcq_vehicle/         * CAN interface to the gateway; dbc/mcqueen.dbc is the frame definition
+    mcq_bringup/         * launch files and parameter sets per kart and per environment
+    mcq_vehicle/         * SocketCAN bridge to the gateway; dbc/mcqueen.dbc is the frame definition
     mcq_localization/      GNSS + IMU + wheel + steering fusion, track frame management
     mcq_track/             track model, Frenet utilities, raceline loading, geofence
     mcq_planning/          local planner, boundary-only planner, speed profile
@@ -59,7 +59,7 @@ mcqueen-vip/
     gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests
   tools/
     raceline/              wrapper around the TUM global race trajectory optimizer
-    survey/                turn recorded RTK laps into a track model file
+    survey/              * turn recorded RTK edge drives into a track model file
     logs/                  MCAP inspection and export scripts
   training/                PyTorch: perception models, learned dynamics, policy experiments (runs off-kart)
     data/                * footage source catalog, YouTube fetch and frame extraction tooling
@@ -90,8 +90,11 @@ python -m pytest -q
 PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2
 PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2 --mode BOUNDARY
 
-# ROS 2 interfaces (inside docker/x86 or any Jazzy install)
-colcon build --packages-select mcq_msgs mcq_sim
+# ROS 2 graph (inside docker/x86 or any Jazzy install): simulator, planner, controller
+rosdep install --from-paths src --ignore-src -y
+colcon build && source install/setup.bash
+ros2 launch mcq_bringup sim.launch.py                       # add record:=true for an MCAP log
+ros2 run mcq_bringup check_graph.py --distance 120          # what CI runs: PASS once 120 m are driven
 ```
 
 What runs on the kart is C: the gateway core on the microcontroller and the control core inside the Jetson's controller node. Python is for the simulator, the planner prototype, tools and training, and stays off the 100 Hz path.

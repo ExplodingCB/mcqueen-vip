@@ -83,7 +83,7 @@ jobs:
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          ros2 launch mcq_bringup sim.launch.py > launch.log 2>&1 &
+          ros2 launch mcq_bringup sim.launch.py record:=true bag:=/tmp/phase0_bag > launch.log 2>&1 &
           LAUNCH_PID=$!
           sleep 5
           set +e
@@ -91,6 +91,16 @@ jobs:
           RC=$?
           set -e
           kill -INT $LAUNCH_PID || true
-          sleep 3
+          sleep 5
           echo "--- launch log"; cat launch.log
           exit $RC
+      - name: Session was recorded to MCAP
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          ls /tmp/phase0_bag
+          ros2 bag info /tmp/phase0_bag | tee bag_info.txt
+          grep -q "Storage id:.*mcap" bag_info.txt
+          grep -q "/ego_state" bag_info.txt
+          grep -q "/vehicle_command" bag_info.txt
+          grep -q "/trajectory" bag_info.txt

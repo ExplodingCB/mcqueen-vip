@@ -6,7 +6,8 @@ ros2 launch mcq_bringup sim.launch.py track:=/path/to/tracks/my_track
 """
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -16,8 +17,17 @@ def generate_launch_description():
     track = LaunchConfiguration("track")
     mode = LaunchConfiguration("mode")
     speed_cap = LaunchConfiguration("speed_cap")
+    record = LaunchConfiguration("record")
+    bag = LaunchConfiguration("bag")
     return LaunchDescription(
         [
+            DeclareLaunchArgument("record", default_value="false", description="record every topic to MCAP"),
+            DeclareLaunchArgument("bag", default_value="sim_session", description="bag directory when recording"),
+            ExecuteProcess(
+                cmd=["ros2", "bag", "record", "-s", "mcap", "-o", bag, "-a"],
+                output="screen",
+                condition=IfCondition(record),
+            ),
             DeclareLaunchArgument(
                 "track",
                 default_value=PathJoinSubstitution([FindPackageShare("mcq_bringup"), "tracks", "synthetic_oval"]),
