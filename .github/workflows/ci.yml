@@ -91,21 +91,24 @@ jobs:
           colcon test --packages-select mcq_control --event-handlers console_direct+
           colcon test-result --verbose
           ros2 interface show mcq_msgs/msg/VehicleCommand
-      - name: Graph smoke test on the synthetic oval
+      - name: Graph smoke test, control run without recording
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          ros2 launch mcq_bringup sim.launch.py record:=true bag:=/tmp/phase0_bag > launch.log 2>&1 &
-          LAUNCH_PID=$!
-          sleep 5
-          set +e
-          timeout 120 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 100
-          RC=$?
-          set -e
-          kill -INT $LAUNCH_PID || true
-          sleep 5
-          echo "--- launch log"; cat launch.log
-          exit $RC
+          src/mcq_bringup/test/graph_smoke.sh control
+      - name: Graph smoke test with recording, default transport
+        id: record_default
+        continue-on-error: true
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          RECORD=true BAG=/tmp/phase0_bag_default src/mcq_bringup/test/graph_smoke.sh record_default
+      - name: Graph smoke test with recording, UDP-only Fast DDS profile
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          RECORD=true BAG=/tmp/phase0_bag FASTDDS_PROFILE=$PWD/src/mcq_bringup/config/fastdds_udp_only.xml \
+            src/mcq_bringup/test/graph_smoke.sh record_udp
       - name: Session was recorded to MCAP
         run: |
           source /opt/ros/jazzy/setup.bash
