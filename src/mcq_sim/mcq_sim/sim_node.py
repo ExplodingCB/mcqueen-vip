@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 
 from mcq_msgs.msg import EgoState, GatewayStatus, VehicleCommand, VehicleState
 from mcq_sim.params import DEFAULT_CONFIG, load_params
@@ -52,10 +53,13 @@ class SimNode(Node):
         self.faults = 0
         self.urgent_brake = 0.0
 
-        self.pub_state = self.create_publisher(VehicleState, "vehicle_state", 10)
-        self.pub_gateway = self.create_publisher(GatewayStatus, "gateway_status", 10)
-        self.pub_ego = self.create_publisher(EgoState, "ego_state", 10)
-        self.create_subscription(VehicleCommand, "vehicle_command", self.on_command, 10)
+        # Best-effort, keep-last on the high-rate topics so no slow subscriber
+        # can back-pressure the loop; see docs/02-architecture.md section 4.
+        qos = qos_profile_sensor_data
+        self.pub_state = self.create_publisher(VehicleState, "vehicle_state", qos)
+        self.pub_gateway = self.create_publisher(GatewayStatus, "gateway_status", qos)
+        self.pub_ego = self.create_publisher(EgoState, "ego_state", qos)
+        self.create_subscription(VehicleCommand, "vehicle_command", self.on_command, qos)
         self.create_timer(self.dt, self.step)
         self.get_logger().info(
             f"simulating on '{self.track.track_id}' ({self.track.length:.1f} m) at {1 / self.dt:.0f} Hz"

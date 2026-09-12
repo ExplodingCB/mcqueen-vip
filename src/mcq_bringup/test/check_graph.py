@@ -11,6 +11,7 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 
 from mcq_msgs.msg import EgoState, GeofenceState, VehicleCommand
 
@@ -27,9 +28,10 @@ class Checker(Node):
         self.stop_requests = 0
         self.geofence_violations = 0
         self.track_length = None
-        self.create_subscription(EgoState, "ego_state", self.on_ego, 10)
-        self.create_subscription(VehicleCommand, "vehicle_command", self.on_cmd, 10)
-        self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, 10)
+        qos = qos_profile_sensor_data
+        self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
+        self.create_subscription(VehicleCommand, "vehicle_command", self.on_cmd, qos)
+        self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, qos)
         self.t0 = time.monotonic()
         self.last_report = self.t0
 

@@ -47,11 +47,12 @@ public:
     const double poll_hz = declare_parameter<double>("poll_hz", 1000.0);
     imu_frame_ = declare_parameter<std::string>("imu_frame", "imu_link");
 
-    pub_state_ = create_publisher<VehicleState>("vehicle_state", 10);
-    pub_status_ = create_publisher<GatewayStatus>("gateway_status", 10);
-    pub_imu_ = create_publisher<Imu>("imu/data_raw", 50);
+    const auto qos = rclcpp::SensorDataQoS();
+    pub_state_ = create_publisher<VehicleState>("vehicle_state", qos);
+    pub_status_ = create_publisher<GatewayStatus>("gateway_status", qos);
+    pub_imu_ = create_publisher<Imu>("imu/data_raw", qos);
     sub_cmd_ = create_subscription<VehicleCommand>(
-      "vehicle_command", 10, [this](const VehicleCommand::SharedPtr msg) { send_command(*msg); });
+      "vehicle_command", qos, [this](const VehicleCommand::SharedPtr msg) { send_command(*msg); });
 
     open_socket();
     timer_ = create_wall_timer(std::chrono::duration<double>(1.0 / poll_hz), [this]() { poll(); });

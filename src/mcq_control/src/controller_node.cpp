@@ -73,13 +73,16 @@ public:
     map_.deadband = param("longitudinal.deadband", 0.05);
     map_.rolling_decel = param("rolling_decel", 0.3);
 
-    pub_ = create_publisher<VehicleCommand>("vehicle_command", 10);
+    // Best-effort, keep-last: a slow subscriber (the recorder, the pit link)
+    // must never back-pressure the control loop. Freshness is checked by age.
+    const auto qos = rclcpp::SensorDataQoS();
+    pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
     sub_traj_ = create_subscription<Trajectory>(
-      "trajectory", 10, [this](const Trajectory::SharedPtr msg) { traj_ = msg; });
+      "trajectory", qos, [this](const Trajectory::SharedPtr msg) { traj_ = msg; });
     sub_ego_ = create_subscription<EgoState>(
-      "ego_state", 10, [this](const EgoState::SharedPtr msg) { ego_ = msg; });
+      "ego_state", qos, [this](const EgoState::SharedPtr msg) { ego_ = msg; });
     sub_vehicle_ = create_subscription<VehicleState>(
-      "vehicle_state", 10, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
+      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
     timer_ = create_wall_timer(
       std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(); });
     RCLCPP_INFO(get_logger(), "controller running at %.0f Hz", rate_hz);

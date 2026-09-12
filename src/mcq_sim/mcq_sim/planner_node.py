@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 
 from mcq_msgs.msg import EgoState, GeofenceState
 from mcq_msgs.msg import Trajectory as TrajectoryMsg
@@ -49,9 +50,10 @@ class PlannerNode(Node):
 
         self.ego: EgoState | None = None
         self.stop_requested = False
-        self.pub_traj = self.create_publisher(TrajectoryMsg, "trajectory", 10)
-        self.pub_geofence = self.create_publisher(GeofenceState, "geofence_state", 10)
-        self.create_subscription(EgoState, "ego_state", self.on_ego, 10)
+        qos = qos_profile_sensor_data
+        self.pub_traj = self.create_publisher(TrajectoryMsg, "trajectory", qos)
+        self.pub_geofence = self.create_publisher(GeofenceState, "geofence_state", qos)
+        self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
         self.create_timer(1.0 / float(self.get_parameter("rate_hz").value), self.plan)
         self.get_logger().info(f"planning in {self.mode} mode on '{self.track.track_id}', cap {pp.v_cap} m/s")
 
