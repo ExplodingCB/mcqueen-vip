@@ -5,7 +5,7 @@ controller:
   ros__parameters:
     rate_hz: 100.0
     trajectory_max_age: 0.2
-    ego_max_age: 0.1
+    ego_max_age: 0.2
     wheelbase: 1.05
     understeer: 0.002
     steer_max: 0.45

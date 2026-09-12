@@ -39,7 +39,7 @@ public:
     const double rate_hz = declare_parameter<double>("rate_hz", 100.0);
     dt_ = static_cast<float>(1.0 / rate_hz);
     trajectory_max_age_ = declare_parameter<double>("trajectory_max_age", 0.2);
-    ego_max_age_ = declare_parameter<double>("ego_max_age", 0.1);
+    ego_max_age_ = declare_parameter<double>("ego_max_age", 0.2);
 
     bike_.wheelbase = param("wheelbase", 1.05);
     bike_.understeer = param("understeer", 0.002);

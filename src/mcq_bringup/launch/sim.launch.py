@@ -23,8 +23,9 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("record", default_value="false", description="record every topic to MCAP"),
             DeclareLaunchArgument("bag", default_value="sim_session", description="bag directory when recording"),
+            # Recording runs at low priority: it must never starve the control loop.
             ExecuteProcess(
-                cmd=["ros2", "bag", "record", "-s", "mcap", "-o", bag, "-a"],
+                cmd=["nice", "-n", "10", "ros2", "bag", "record", "-s", "mcap", "-o", bag, "-a"],
                 output="screen",
                 condition=IfCondition(record),
             ),
