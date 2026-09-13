@@ -20,6 +20,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install numpy scipy pyyaml pytest cantools ruff python-can mcap mcap-ros2-support
           pip install -r training/data/requirements.txt
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r training/requirements.txt
       - name: Lint
         run: |
           ruff check .
@@ -51,7 +53,7 @@ jobs:
           else
             echo "::warning::vcan unavailable on this runner; the gateway_host bus test will be skipped"
           fi
-      - name: Python tests (simulator, DBC, survey, gateway over vcan, training tooling)
+      - name: Python tests (simulator, DBC, survey, gateway over vcan, ingest and training pipeline)
         run: python -m pytest -q -rs
       - name: Phase 0 loop on the synthetic oval
         run: |

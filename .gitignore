@@ -31,3 +31,8 @@ training/data/manifest.jsonl
 firmware/gateway/build/
 src/mcq_control/core/build/
 *.egg-info/
+
+# Perception training: labels, splits, runs and engines stay on shared storage
+training/data/labels/
+training/data/datasets/
+training/runs/

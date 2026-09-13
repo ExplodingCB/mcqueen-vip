@@ -4,7 +4,7 @@ Autonomous racing kart for the Purdue Grand Prix track at the Northwest Sports C
 
 The first target is a fully autonomous lap in under 60 seconds with no human intervention. The second target is a lap time competitive with the Autonomous Karting Series (AKS) field, which races on the same track every May. The stack must run from a track description alone (centerline plus widths, or perceived boundaries) so it can be tested on any paved loop before it ever sees the Purdue track.
 
-Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition with generated codecs and a SocketCAN bridge, the ROS 2 message package, a simulator that closes the loop on a synthetic oval both as a Python harness and as the ROS 2 graph (simulator, planner, controller nodes), and the survey tool. Read the docs in order, then `## Build and test` below.
+Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition with generated codecs and a SocketCAN bridge, the ROS 2 message package, a simulator that closes the loop on a synthetic oval both as a Python harness and as the ROS 2 graph (simulator, planner, controller nodes), the survey tool, and the perception training pipeline (log to frames, survey to labels, dataset, training, evaluation, ONNX export) exercised end to end on the synthetic oval. Read the docs in order, then `## Build and test` below.
 
 ## Quick facts
 
@@ -32,6 +32,7 @@ Status: Phase 0 in progress. The design draft is in `docs/`; the code that exist
 | [docs/06-dev-setup.md](docs/06-dev-setup.md) | Jetson flashing, ROS 2, Docker, logging, conventions |
 | [docs/07-references.md](docs/07-references.md) | Sources checked while writing this draft |
 | [docs/08-training-data.md](docs/08-training-data.md) | Where onboard kart footage exists, how much, under what terms, and the ingest pipeline in `training/data/` |
+| [docs/09-training-pipeline.md](docs/09-training-pipeline.md) | How footage becomes labels, datasets, a trained model and a TensorRT engine on the kart; the code in `training/mcq_training/` |
 
 ## The stack in one paragraph
 
@@ -63,6 +64,9 @@ mcqueen-vip/
     logs/                * MCAP lap report; message definitions for reading logs without ROS
   training/                PyTorch: perception models, learned dynamics, policy experiments (runs off-kart)
     data/                * footage source catalog, YouTube fetch and frame extraction tooling
+    mcq_training/        * survey-to-image label projection, MCAP frame extraction, SAM 3 auto-labeling,
+                           dataset assembly, training, evaluation in metres, ONNX export
+    configs/             * camera model, label prompts, dataset and training recipes
   docker/                * x86 development container (Jetson image to follow)
   tracks/                * track model files (centerline + widths) and generated racelines
 ```
@@ -83,8 +87,13 @@ cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=R
 cmake --build src/mcq_control/core/build
 ctest --test-dir src/mcq_control/core/build --output-on-failure
 
-# Simulator, DBC and training tooling tests
+# Simulator, DBC and training tooling tests (the perception pipeline tests need torch; see below)
 python -m pytest -q
+
+# Perception training pipeline: frames from a synthetic log, labels from the oval, a model trained,
+# exported to ONNX and evaluated in metres, all on the CPU
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r training/requirements.txt
+python -m pytest -q training/tests
 
 # Phase 0 loop: two laps of the synthetic oval from the track file alone
 PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2

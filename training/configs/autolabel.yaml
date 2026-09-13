@@ -1,0 +1,8 @@
+# Text prompts per class for autolabel.py (SAM 3). Classes are painted in
+# paint_order, so a kart mask overrides the pavement under it. A mask below
+# min_score is dropped; a frame with no pavement mask gets status auto_empty.
+prompts:
+  pavement: ["asphalt race track surface", "paved track"]
+  kart: ["go-kart", "racing kart"]
+min_score: 0.3
+paint_order: [pavement, kart]

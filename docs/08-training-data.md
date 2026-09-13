@@ -1,5 +1,7 @@
 # Training footage: where the hours are and how we get them
 
+2026-09-13: the pipeline of section 5 exists in `training/mcq_training/` and is described in [09-training-pipeline.md](09-training-pipeline.md). Two changes to the plan below. Step 2 uses SAM 3 (Meta, November 2025: text-prompted concept segmentation; SAM 3.1 of March 2026 made its multi-object video tracking several times faster) instead of Grounded SAM 2. Step 5, projecting the surveyed edges into our own frames, is implemented and tested against the synthetic oval, so tier A labels cost nothing from the first logged lap with a calibrated camera; the practical consequence is that the camera should be mounted and calibrated in Phase 1 with the other sensors, not in Phase 4.
+
 The perception model in `mcq_perception` needs front-camera footage of kart tracks, labeled for pavement versus not-pavement and for other karts. This document is the result of a source hunt done on 2026-09-11 and the plan that follows from it. The tooling that implements the plan lives in `training/data/`.
 
 ## 1. The short version

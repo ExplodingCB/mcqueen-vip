@@ -1,0 +1,19 @@
+# Training side of the perception pipeline (docs/09-training-pipeline.md).
+# Install PyTorch first for your hardware, then this file:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130   # workstation GPU
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu     # laptop / CI
+torch>=2.9            # torch.onnx.export uses the dynamo exporter by default from 2.9
+torchvision>=0.24
+numpy>=1.26
+scipy>=1.11
+pillow>=10
+pyyaml>=6
+onnx>=1.17
+onnxscript>=0.3    # required by torch.onnx.export (dynamo exporter)
+onnxruntime>=1.20     # parity check after export; the Jetson uses TensorRT, not onnxruntime
+mcap>=1.2             # tier A: read the kart's session logs without ROS
+mcap-ros2-support>=0.5
+pytest>=8
+# Auto-labeling (tier B and C) needs a GPU and the SAM 3 package, installed from source:
+#   git clone https://github.com/facebookresearch/sam3 && pip install -e sam3   (Python 3.12+, CUDA 12.6+)
+#   hf auth login   # weights are gated on huggingface.co/facebook/sam3

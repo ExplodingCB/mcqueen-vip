@@ -1,0 +1,15 @@
+# Placeholder forward camera until the real one is mounted and calibrated
+# (docs/03-hardware.md section 5): 1280 x 800 global shutter, 100 deg horizontal
+# field of view, 0.75 m above the pavement, 0.6 m ahead of the rear axle
+# (base_link), pitched 10 deg down. Replace with the calibrated values and the
+# URDF camera_front transform in the same change; the label projector and the
+# metrics in metres both read this file.
+width: 1280
+height: 800
+hfov_deg: 100.0
+x: 0.6
+y: 0.0
+z: 0.75
+yaw_deg: 0.0
+pitch_deg: 10.0
+roll_deg: 0.0

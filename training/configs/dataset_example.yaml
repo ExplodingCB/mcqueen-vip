@@ -1,0 +1,14 @@
+# build_dataset input. Sources and videos match by glob on the source id or
+# the video id; anything unmatched falls back to the license rule (own -> A,
+# Creative Commons or granted -> B, else C). Frames of one video never span
+# train and val; test is listed explicitly and is meant to be whole tier A
+# sessions at the Purdue track that nothing ever trains on.
+name: seg_v1
+statuses: [auto, reviewed]
+tiers:
+  A: ["kart_*"]
+  B: ["purdue_gp_*", "kart_chaser", "fia_karting"]
+weights: {A: 4.0, B: 2.0, C: 1.0}
+val_fraction: 0.15                 # of videos, by a stable hash of the video id
+val: []                            # patterns forced into val on top of the hash
+test: ["kart_2027-01-*"]

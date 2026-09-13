@@ -4,7 +4,7 @@
 [tool.ruff]
 line-length = 120
 target-version = "py310"
-extend-exclude = ["build", "install", "log", "training/data/raw", "training/data/frames"]
+extend-exclude = ["build", "install", "log", "training/data/raw", "training/data/frames", "training/data/labels", "training/data/datasets", "training/runs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "NPY"]
@@ -19,9 +19,9 @@ ignore = ["E741"]
 exclude = ["training/data/*.py", "training/data/tests/*.py"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["mcq_sim"]
+known-first-party = ["mcq_sim", "mcq_training"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests"]
-pythonpath = ["src/mcq_sim"]
+testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests", "training/tests"]
+pythonpath = ["src/mcq_sim", "training"]
 addopts = "-q"
