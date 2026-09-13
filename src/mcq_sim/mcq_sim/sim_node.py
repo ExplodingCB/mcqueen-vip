@@ -23,6 +23,7 @@ from mcq_sim.vehicle import KartSim, VehicleParams
 from mcq_sim.vehicle import VehicleState as KartState
 
 HEARTBEAT_TIMEOUT_S = 0.05
+HEARTBEAT_CONTINUOUS_S = 1.0  # the real gateway's requirement before AUTO entry
 
 
 class SimNode(Node):
@@ -33,6 +34,9 @@ class SimNode(Node):
         self.declare_parameter("rate_hz", 100.0)
         self.declare_parameter("start_s", 0.0)
         self.declare_parameter("seed", 0)
+        # Seconds after the heartbeat has been continuous for a second before
+        # the emulated operator flips the switch to AUTO.
+        self.declare_parameter("handover_delay", 2.0)
 
         track_dir = self.get_parameter("track_dir").value
         self.track = Track.load(track_dir) if track_dir else Track.synthetic_oval()
@@ -49,9 +53,11 @@ class SimNode(Node):
 
         self.cmd: VehicleCommand | None = None
         self.cmd_time = None
-        self.mode = VehicleState.MODE_AUTO
+        self.mode = VehicleState.MODE_RC
         self.faults = 0
         self.urgent_brake = 0.0
+        self.fresh_since = None
+        self.handover_delay = float(self.get_parameter("handover_delay").value)
 
         # Best-effort, keep-last on the high-rate topics so no slow subscriber
         # can back-pressure the loop; see docs/02-architecture.md section 4.
@@ -69,22 +75,47 @@ class SimNode(Node):
         self.cmd = msg
         self.cmd_time = self.get_clock().now()
 
+    def set_mode(self, mode: int):
+        if mode != self.mode:
+            names = {v: k[5:] for k, v in vars(VehicleState).items() if k.startswith("MODE_")}
+            self.get_logger().info(f"gateway {names.get(self.mode, self.mode)} -> {names.get(mode, mode)}")
+            self.mode = mode
+
     def emulated_gateway(self):
-        """Returns (steer, throttle, brake) after the gateway's own logic."""
+        """Returns (steer, throttle, brake) after the gateway's own logic: RC
+        until the heartbeat has been continuous and the operator hands over,
+        AUTO while commands stay fresh, URGENT_STOP on timeout or request."""
         now = self.get_clock().now()
         fresh = self.cmd is not None and (now - self.cmd_time).nanoseconds * 1e-9 <= HEARTBEAT_TIMEOUT_S
         self.faults = 0
         if not fresh:
-            self.faults |= GatewayStatus.FAULT_HEARTBEAT_TIMEOUT
-        elif self.cmd.request_urgent_stop:
-            self.faults |= GatewayStatus.FAULT_JETSON_REQUEST
-        if self.faults:
-            self.mode = VehicleState.MODE_URGENT_STOP
+            self.fresh_since = None
+        elif self.fresh_since is None:
+            self.fresh_since = now
+        continuous = (now - self.fresh_since).nanoseconds * 1e-9 if self.fresh_since is not None else 0.0
+
+        if self.mode == VehicleState.MODE_AUTO:
+            if not fresh:
+                self.faults |= GatewayStatus.FAULT_HEARTBEAT_TIMEOUT
+            elif self.cmd.request_urgent_stop:
+                self.faults |= GatewayStatus.FAULT_JETSON_REQUEST
+            if self.faults:
+                self.set_mode(VehicleState.MODE_URGENT_STOP)
+        elif self.mode == VehicleState.MODE_URGENT_STOP:
+            # Standstill, then an operator reset back to RC.
+            if self.sim.state.v < 0.05 and not (fresh and self.cmd.request_urgent_stop):
+                self.set_mode(VehicleState.MODE_RC)
+        if self.mode == VehicleState.MODE_RC:
+            if continuous >= HEARTBEAT_CONTINUOUS_S + self.handover_delay and not self.cmd.request_urgent_stop:
+                self.set_mode(VehicleState.MODE_AUTO)
+
+        if self.mode == VehicleState.MODE_URGENT_STOP:
             self.urgent_brake = min(1.0, self.urgent_brake + self.dt / 0.3)  # 300 ms ramp
             steer = self.sim.state.steer if self.sim.state.v > 3.0 else 0.0
             return steer, 0.0, self.urgent_brake
         self.urgent_brake = 0.0
-        self.mode = VehicleState.MODE_AUTO
+        if self.mode != VehicleState.MODE_AUTO:
+            return 0.0, 0.0, 0.0  # RC with nobody on the transmitter: the kart sits still
         cmd = self.cmd
         steer = cmd.steering_angle if cmd.lat_enable else 0.0
         throttle = cmd.throttle if cmd.long_enable else 0.0

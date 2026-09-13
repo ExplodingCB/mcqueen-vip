@@ -27,7 +27,7 @@ fi
 ( timeout 14 ros2 topic hz /ego_state --window 100 > "hz_ego_$label.txt" 2>&1 ) &
 ( timeout 14 ros2 topic hz /vehicle_command --window 100 > "hz_cmd_$label.txt" 2>&1 ) &
 ( timeout 14 ros2 topic hz /trajectory --window 20 > "hz_traj_$label.txt" 2>&1 ) &
-( sleep 9; top -b -n 1 -o %CPU | head -25 > "top_$label.txt" 2>&1; ros2 topic info -v /ego_state > "info_ego_$label.txt" 2>&1; ros2 node list > "nodes_$label.txt" 2>&1 ) &
+( sleep 9; top -b -n 1 -o %CPU | head -25 > "top_$label.txt" 2>&1 ) &
 timeout 130 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 110 &
 checker_pid=$!
 sleep 3
@@ -37,6 +37,10 @@ setsid ros2 launch mcq_bringup sim.launch.py "${launch_args[@]}" > "launch_$labe
 launch_pid=$!
 wait "$checker_pid"
 rc=$?
+# Graph queries only now: each one joins the graph as a participant, which
+# would freeze the rclpy nodes mid-drive.
+ros2 topic info -v /ego_state > "info_ego_$label.txt" 2>&1
+ros2 node list > "nodes_$label.txt" 2>&1
 
 # Stop the launch and everything under it, then wait until the graph is empty.
 kill -INT -- -"$launch_pid" 2>/dev/null || kill -INT "$launch_pid" 2>/dev/null || true

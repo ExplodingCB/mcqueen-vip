@@ -153,12 +153,17 @@ private:
     const double traj_age = (now - rclcpp::Time(traj_->header.stamp)).seconds();
     const double ego_age = (now - rclcpp::Time(ego_->header.stamp)).seconds();
     const bool stale = traj_age > trajectory_max_age_ || ego_age > ego_max_age_;
-    if (stale && !was_stale_) {
+    // The Jetson-side checks apply while the Jetson is driving. In RC the
+    // gateway ignores these commands anyway, and a stop request would brake a
+    // human's drive out of the pit for a startup hiccup.
+    const bool auto_mode = vehicle_ && vehicle_->mode == VehicleState::MODE_AUTO;
+    const bool request_stop = stale && auto_mode;
+    if (request_stop && !was_stale_) {
       RCLCPP_WARN(
         get_logger(), "stale inputs (trajectory %.0f ms, ego %.0f ms): requesting urgent stop",
         traj_age * 1e3, ego_age * 1e3);
     }
-    was_stale_ = stale;
+    was_stale_ = request_stop;
     const bool stop = traj_->stop_requested || stale;
 
     const float x = static_cast<float>(ego_->pose.position.x);
@@ -206,7 +211,7 @@ private:
     cmd.brake = brake;
     cmd.lat_enable = true;
     cmd.long_enable = true;
-    cmd.request_urgent_stop = stale;
+    cmd.request_urgent_stop = request_stop;
     pub_->publish(cmd);
   }
 
