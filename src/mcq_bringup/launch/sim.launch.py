@@ -50,11 +50,21 @@ def generate_launch_description():
                 parameters=[{"track_dir": track, "publish_ego_state": LaunchConfiguration("ego_from_sim")}],
             ),
             Node(
+                package="mcq_track",
+                executable="track_server",
+                name="track_server",
+                output="screen",
+                parameters=[
+                    PathJoinSubstitution([FindPackageShare("mcq_track"), "config", "track.yaml"]),
+                    {"track_dir": track},
+                ],
+            ),
+            Node(
                 package="mcq_sim",
                 executable="planner_node",
                 name="planner_node",
                 output="screen",
-                parameters=[{"track_dir": track, "mode": mode, "speed_cap": speed_cap}],
+                parameters=[{"mode": mode, "speed_cap": speed_cap}],
             ),
             Node(
                 package="mcq_control",
