@@ -32,6 +32,7 @@ Status: Phase 0 in progress. The design draft is in `docs/`; the code that exist
 | [docs/06-dev-setup.md](docs/06-dev-setup.md) | Jetson flashing, ROS 2, Docker, logging, conventions |
 | [docs/07-references.md](docs/07-references.md) | Sources checked while writing this draft |
 | [docs/08-training-data.md](docs/08-training-data.md) | Where onboard kart footage exists, how much, under what terms, and the ingest pipeline in `training/data/` |
+| [docs/09-work-queue.md](docs/09-work-queue.md) | Where the tree stands and the code that needs writing next, in lanes one person can own |
 
 ## The stack in one paragraph
 
@@ -60,7 +61,7 @@ mcqueen-vip/
   tools/
     raceline/              wrapper around the TUM global race trajectory optimizer
     survey/              * turn recorded RTK edge drives into a track model file
-    logs/                * MCAP lap report; message definitions for reading logs without ROS
+    logs/                  MCAP lap report; message definitions for reading logs without ROS (task E1)
   training/                PyTorch: perception models, learned dynamics, policy experiments (runs off-kart)
     data/                * footage source catalog, YouTube fetch and frame extraction tooling
   docker/                * x86 development container (Jetson image to follow)
