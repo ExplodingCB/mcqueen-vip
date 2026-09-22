@@ -147,11 +147,13 @@ private:
     cmd.header.frame_id = "base_link";
     cmd.heartbeat = heartbeat_++;
 
+    const bool auto_mode = vehicle_ && vehicle_->mode == VehicleState::MODE_AUTO;
     if (!traj_ || !ego_ || traj_->points.size() < 2) {
-      // Nothing to track yet: hold with no authority, the gateway stays in RC.
+      // Hold with no axis authority in RC. The real gateway also honors Jetson
+      // stop requests in RC, so only AUTO missing inputs request urgent stop.
       cmd.lat_enable = false;
       cmd.long_enable = false;
-      cmd.request_urgent_stop = true;
+      cmd.request_urgent_stop = auto_mode;
       pub_->publish(cmd);
       return;
     }
@@ -165,8 +167,7 @@ private:
     // The Jetson-side checks apply while the Jetson is driving. In RC the
     // gateway ignores these commands anyway, and a stop request would brake a
     // human's drive out of the pit for a startup hiccup.
-    const bool auto_mode = vehicle_ && vehicle_->mode == VehicleState::MODE_AUTO;
-    const bool request_stop = (stale && auto_mode) || geofence_stop;
+    const bool request_stop = (stale || geofence_stop) && auto_mode;
     if (request_stop && !was_stale_) {
       RCLCPP_WARN(
         get_logger(), "unsafe inputs (trajectory %.0f ms, ego %.0f ms, geofence stop %d): requesting urgent stop",
@@ -218,8 +219,8 @@ private:
     cmd.steering_angle = steer;
     cmd.throttle = throttle;
     cmd.brake = brake;
-    cmd.lat_enable = true;
-    cmd.long_enable = true;
+    cmd.lat_enable = !geofence_stop;
+    cmd.long_enable = !geofence_stop;
     cmd.request_urgent_stop = request_stop;
     pub_->publish(cmd);
   }

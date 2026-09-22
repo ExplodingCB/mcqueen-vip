@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+from mcq_sim.planner import FrenetPlanner, PlannerParams
 from mcq_sim.track import Track
 from mcq_sim.track_model import model_signature, reference_from_model, track_from_model
 
@@ -65,3 +66,18 @@ def test_optional_raceline_reference():
     msg.raceline_v[0] = -1
     with pytest.raises(ValueError):
         reference_from_model(msg, track)
+
+
+def test_raceline_speed_closes_at_actual_track_length():
+    msg = model()
+    track = track_from_model(msg)
+    msg.raceline = msg.centerline
+    msg.raceline_kappa = list(track.kappa)
+    msg.raceline_v = [4.0] * len(track.x)
+    msg.raceline_v[0] = 2.0
+    reference, raceline = reference_from_model(msg, track)
+    planner = FrenetPlanner(reference, PlannerParams(), raceline=raceline)
+    seam_midpoint = 0.5 * (reference.s[-1] + reference.length)
+    assert planner._raceline_speed(reference.s[-1]) == pytest.approx(4.0)
+    assert planner._raceline_speed(seam_midpoint) == pytest.approx(3.0)
+    assert planner._raceline_speed(reference.length) == pytest.approx(2.0)

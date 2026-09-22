@@ -37,6 +37,8 @@ class Checker(Node):
         self.started = time.monotonic()
         self.injected = None
         self.ready = False
+        self.ever_auto = False
+        self.rc_commands = 0
         self.invalid_future = None
         self.reload_future = None
         self.invalid_rejected = False
@@ -53,7 +55,8 @@ class Checker(Node):
         qos = qos_profile_sensor_data
         self.ego_pub = self.create_publisher(EgoState, "ego_state", qos)
         self.create_subscription(EgoState, "ego_truth", self.on_ego, qos)
-        self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, qos)
+        self.geofence_pub = self.create_publisher(GeofenceState, "geofence_state", qos)
+        self.create_subscription(GeofenceState, "geofence_raw", self.on_geofence, qos)
         self.create_subscription(VehicleCommand, "vehicle_command", self.on_command, qos)
         self.create_subscription(VehicleState, "vehicle_state", self.on_vehicle, qos)
         model_qos = QoSProfile(
@@ -76,6 +79,8 @@ class Checker(Node):
         self.ego_pub.publish(msg)
 
     def on_geofence(self, msg):
+        if self.args.scenario != "missing" or self.injected is None:
+            self.geofence_pub.publish(msg)
         if not msg.violation:
             self.clean = True
         elif self.injected is None and msg.reason != GeofenceState.REASON_POSE_STALE:
@@ -89,6 +94,10 @@ class Checker(Node):
                 self.distance = msg.distance_to_edge
 
     def on_command(self, msg):
+        if not self.ever_auto:
+            self.rc_commands += 1
+            if msg.request_urgent_stop:
+                self.failure = "controller requested urgent stop during RC startup"
         if self.reason_seen and msg.request_urgent_stop:
             self.stop_seen = True
 
@@ -96,11 +105,14 @@ class Checker(Node):
         if self.injected is not None and msg.mode == VehicleState.MODE_URGENT_STOP:
             self.gateway_seen = True
         self.ready = msg.mode == VehicleState.MODE_AUTO
+        self.ever_auto = self.ever_auto or self.ready
 
     def tick(self):
         elapsed = time.monotonic() - self.started
         if self.failure:
             raise AssertionError(self.failure)
+        if self.args.scenario == "missing" and self.injected is not None:
+            self.reason_seen = time.monotonic() - self.injected > 0.2
         if self.invalid_future is None and self.client.service_is_ready() and self.clean:
             request = LoadTrack.Request()
             request.path = str(self.args.directory / "invalid")
@@ -129,11 +141,13 @@ class Checker(Node):
                 raise AssertionError("shift did not replace TrackModel and leave the inflated polygon")
             if self.args.scenario == "covariance" and self.distance <= 0:
                 raise AssertionError("covariance test must fire while position remains inside")
+            if self.rc_commands < 10:
+                raise AssertionError("RC startup was not observed")
             if self.model_count < 10:
                 raise AssertionError("TrackModel did not publish periodically")
             self.get_logger().info(
                 f"PASS {self.args.scenario}: geofence, urgent-stop command, gateway stop, standstill; "
-                f"inflated edge distance {self.distance:.3f} m; invalid reload preserved active track"
+                f"inflated edge distance {self.distance} m; RC startup clean; invalid reload preserved active track"
             )
             return True
         if elapsed > 60 or (self.injected is not None and time.monotonic() - self.injected > 8):
@@ -148,7 +162,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare", action="store_true")
     parser.add_argument("--directory", type=Path, required=True)
-    parser.add_argument("--scenario", choices=["shift", "covariance"], default="shift")
+    parser.add_argument("--scenario", choices=["shift", "covariance", "missing"], default="shift")
     args = parser.parse_args()
     if args.prepare:
         prepare(args.directory)

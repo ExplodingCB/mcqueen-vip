@@ -114,6 +114,8 @@ jobs:
           src/mcq_bringup/test/geofence_graph.sh shift
           sleep 3
           src/mcq_bringup/test/geofence_graph.sh covariance
+          sleep 3
+          src/mcq_bringup/test/geofence_graph.sh missing
       - name: Session was recorded to MCAP
         run: |
           source /opt/ros/jazzy/setup.bash

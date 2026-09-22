@@ -46,6 +46,9 @@ After a ROS build, run `src/mcq_bringup/test/geofence_graph.sh shift` and the sa
 command with `covariance`. Observers join before the graph. Both start FOLLOW,
 reject a malformed reload without changing the active map, inject a fault while
 moving, and require the correct verdict, gateway urgent stop and standstill.
+The `missing` scenario stops delivering verdicts during AUTO and requires the
+controller to request urgent stop after the freshness budget. Every scenario also
+asserts that RC startup commands never request urgent stop.
 The shift fixture is 2 m wide because a 2 m shift of the usual 5 m oval does not
 put a centered pose outside its inflated polygon. These graph checks run in CI;
 host geometry tests alone do not establish ROS or driving acceptance.

@@ -26,7 +26,7 @@ ros2 run mcq_bringup check_geofence.py --prepare --directory "$fixture"
 timeout 70 ros2 run mcq_bringup check_geofence.py --directory "$fixture" --scenario "$scenario" &
 checker_pid=$!
 sleep 3
-setsid ros2 launch mcq_bringup sim.launch.py track:="$fixture/original" ego_from_sim:=false mode:=FOLLOW \
+setsid ros2 launch mcq_bringup sim.launch.py track:="$fixture/original" ego_from_sim:=false mode:=FOLLOW geofence_output:=geofence_raw \
   > "geofence_${scenario}.log" 2>&1 &
 launch_pid=$!
 set +e
