@@ -3,8 +3,8 @@ s: longitudinal coordinates
 d: lateral coordinates  
 centerline: THE reference path that is used to plot vehicle position (in our code, 'track.csv')  
 half-width:
-raceline:
-minimum curvature:
+raceline: a TUM optimized racing line using multiple data points  
+minimum curvature: 
 minimum time:
 ggv diagram:
 speed profile:
