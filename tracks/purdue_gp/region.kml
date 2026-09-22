@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document><Placemark><name>Purdue Track</name>
+    <description>User-provided area of interest. Not a pavement boundary or elevation survey.</description>
+    <Polygon><outerBoundaryIs><LinearRing><coordinates>
+      -86.94563287420567,40.43674585340416,0
+      -86.94334225420789,40.43687359752168,0
+      -86.9434027255151,40.43872217050689,0
+      -86.94609015407742,40.43840376247476,0
+      -86.94563287420567,40.43674585340416,0
+    </coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark></Document>
+</kml>

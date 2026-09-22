@@ -112,6 +112,8 @@ class Track:
             track_id=meta.get("track_id", directory.name),
         )
         track.meta = meta
+        if meta.get("aerial", {}).get("file"):
+            track.meta["aerial_path"] = str((directory / meta["aerial"]["file"]).resolve())
         return track
 
     def save(self, directory: str | Path) -> None:
