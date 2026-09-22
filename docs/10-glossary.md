@@ -2,7 +2,7 @@ Frenet frame: using vectors and derivatives to plot vehicle position to a refere
 s: longitudinal coordinates  
 d: lateral coordinates  
 centerline: THE reference path that is used to plot vehicle position (in our code, 'track.csv')  
-half-width:
+half-width: the width on each side of the centerline to define the track  
 raceline: a TUM optimized racing line using multiple data points  
 minimum curvature: 
 minimum time:
