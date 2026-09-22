@@ -71,7 +71,7 @@ def run(args):
         for topic, spec in outputs.items()
     }
     ticks = node.create_publisher(Header, "replay/tick", qos)
-    receipt_subscription = node.create_subscription(Header, "replay/received", receipts.append, qos)
+    receipt_subscription = node.create_subscription(Header, "replay/received", lambda msg: receipts.append(msg), qos)
     parameters = args.parameters or (args.topic_map.parent / config["parameters"]).resolve()
     node_name = config["node_name"]
     # A bare `controller:` YAML key does not match a namespaced node. Preserve
