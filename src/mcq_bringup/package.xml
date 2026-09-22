@@ -4,7 +4,7 @@
   <name>mcq_bringup</name>
   <version>0.1.0</version>
   <description>Launch files and parameter sets per kart and per environment (sim, bench, track).</description>
-  <maintainer email="culbertsonprime@gmail.com">Chase Culbertson</maintainer>
+  <maintainer email="explodingcommandblock@gmail.com">ExplodingCB</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

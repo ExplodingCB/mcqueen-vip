@@ -20,6 +20,7 @@ logs/
 # Editors
 .vscode/
 .idea/
+.DS_Store
 *.swp
 
 # Footage never enters git
