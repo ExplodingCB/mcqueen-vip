@@ -10,6 +10,7 @@ from __future__ import annotations
 import ctypes as C
 import os
 import subprocess
+import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -18,7 +19,7 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CORE_DIR = REPO_ROOT / "src" / "mcq_control" / "core"
 BUILD_DIR = CORE_DIR / "build"
-LIB_NAME = "libmcq_control_core.so"
+LIB_NAME = "libmcq_control_core.dylib" if sys.platform == "darwin" else "libmcq_control_core.so"
 
 MAX_BREAKPOINTS = 8
 
