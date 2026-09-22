@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -8,15 +9,22 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
+PACKAGE_ROOT = ROOT / "src" / "mcq_sim"
 
 
 @pytest.fixture
 def viewer():
+    # pytest's `pythonpath` setting puts src/mcq_sim on the path of this process
+    # only, so a child process needs to be told separately or it cannot import
+    # the package it is being asked to run.
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join([str(PACKAGE_ROOT), env.get("PYTHONPATH", "")]).rstrip(os.pathsep)
     process = subprocess.Popen(
         [sys.executable, "-m", "mcq_sim", "view", "--port", "0", "--track", str(ROOT / "tracks/purdue_gp")],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        env=env,
     )
     try:
         line = process.stdout.readline()
