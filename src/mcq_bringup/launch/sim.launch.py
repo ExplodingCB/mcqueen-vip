@@ -3,6 +3,7 @@
 ros2 launch mcq_bringup sim.launch.py
 ros2 launch mcq_bringup sim.launch.py mode:=BOUNDARY speed_cap:=4.0
 ros2 launch mcq_bringup sim.launch.py track:=/path/to/tracks/my_track
+ros2 launch mcq_bringup sim.launch.py ego_from_sim:=false   # with a real estimator
 """
 
 from launch import LaunchDescription
@@ -35,13 +36,18 @@ def generate_launch_description():
                 description="track directory with track.csv and track.yaml",
             ),
             DeclareLaunchArgument("mode", default_value="FOLLOW", description="FOLLOW or BOUNDARY"),
+            DeclareLaunchArgument(
+                "ego_from_sim",
+                default_value="true",
+                description="publish the simulator's truth as /ego_state; false once mcq_localization runs",
+            ),
             DeclareLaunchArgument("speed_cap", default_value="5.0", description="planner speed cap, m/s"),
             Node(
                 package="mcq_sim",
                 executable="sim_node",
                 name="sim_node",
                 output="screen",
-                parameters=[{"track_dir": track}],
+                parameters=[{"track_dir": track, "publish_ego_state": LaunchConfiguration("ego_from_sim")}],
             ),
             Node(
                 package="mcq_sim",

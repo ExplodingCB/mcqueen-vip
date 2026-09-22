@@ -79,7 +79,7 @@ Last commit before this document was `39081d6` (2026-09-13), CI green on `main`,
 
 What runs today: the gateway core with the software half of the fault-injection list, the C control core, the DBC with generated codecs on both sides, the SocketCAN bridge and its host build over `vcan0`, the Python simulator and planner prototype, the ROS 2 graph driving 120 m of the synthetic oval in CI with the session recorded to MCAP, and the survey tool.
 
-One thing to keep in mind while assigning: `sim_node` publishes `EgoState` straight from the simulator's own state with `gnss_status = FIXED`, so every controller and planner number we have so far assumes perfect localization. Lane A is what turns those numbers into real ones.
+One thing to keep in mind while assigning: until 2026-09-22 `sim_node` published `EgoState` from the simulator's own state, the true pose with 2 cm of white noise on position, the true yaw and speed, and `gnss_status` hard-coded to fixed, so every controller and planner number we have so far assumes localization with no latency, no bias and no outages. A1 is done and the simulator now publishes sensors; A2 is what turns those numbers into real ones.
 
 Four things the documents claim exist and do not:
 

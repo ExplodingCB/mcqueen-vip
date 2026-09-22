@@ -29,34 +29,8 @@ from scipy.spatial import cKDTree
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src" / "mcq_sim"))
 
+from mcq_sim.geodesy import geodetic_to_enu  # noqa: E402
 from mcq_sim.track import Track  # noqa: E402
-
-# ------------------------------------------------------------------ geodesy
-WGS84_A = 6378137.0
-WGS84_F = 1.0 / 298.257223563
-WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
-
-
-def geodetic_to_ecef(lat_deg, lon_deg, h):
-    lat, lon = np.radians(lat_deg), np.radians(lon_deg)
-    n = WGS84_A / np.sqrt(1.0 - WGS84_E2 * np.sin(lat) ** 2)
-    x = (n + h) * np.cos(lat) * np.cos(lon)
-    y = (n + h) * np.cos(lat) * np.sin(lon)
-    z = (n * (1.0 - WGS84_E2) + h) * np.sin(lat)
-    return x, y, z
-
-
-def geodetic_to_enu(lat_deg, lon_deg, h, datum):
-    """East, north, up in metres relative to datum = (lat, lon, height)."""
-    lat0, lon0, h0 = datum
-    x0, y0, z0 = geodetic_to_ecef(lat0, lon0, h0)
-    x, y, z = geodetic_to_ecef(np.asarray(lat_deg, float), np.asarray(lon_deg, float), np.asarray(h, float))
-    dx, dy, dz = x - x0, y - y0, z - z0
-    la, lo = np.radians(lat0), np.radians(lon0)
-    east = -np.sin(lo) * dx + np.cos(lo) * dy
-    north = -np.sin(la) * np.cos(lo) * dx - np.sin(la) * np.sin(lo) * dy + np.cos(la) * dz
-    up = np.cos(la) * np.cos(lo) * dx + np.cos(la) * np.sin(lo) * dy + np.sin(la) * dz
-    return east, north, up
 
 
 # ----------------------------------------------------------------- pipeline

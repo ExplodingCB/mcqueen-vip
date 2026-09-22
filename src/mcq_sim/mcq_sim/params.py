@@ -27,6 +27,7 @@ DEFAULT_CONFIG = _default_config()
 @dataclass
 class Params:
     vehicle: dict[str, float] = field(default_factory=dict)
+    sensors: dict[str, dict] = field(default_factory=dict)
     planner: dict[str, float] = field(default_factory=dict)
     lateral: dict[str, float] = field(default_factory=dict)
     longitudinal: dict[str, float] = field(default_factory=dict)
@@ -34,10 +35,14 @@ class Params:
     harness: dict[str, float] = field(default_factory=dict)
 
     def override(self, dotted: dict[str, Any]) -> Params:
-        """Apply overrides given as {"section.key": value}."""
+        """Apply overrides given as {"section.key": value}, or
+        {"section.group.key": value} for the nested sections."""
         for key, value in dotted.items():
-            section, name = key.split(".", 1)
-            getattr(self, section)[name] = value
+            section, *path = key.split(".")
+            target = getattr(self, section)
+            for step in path[:-1]:
+                target = target.setdefault(step, {})
+            target[path[-1]] = value
         return self
 
 

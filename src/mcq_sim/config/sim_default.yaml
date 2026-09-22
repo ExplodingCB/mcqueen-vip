@@ -12,7 +12,44 @@ vehicle:
   brake_decel_max: 6.0     # m/s^2 at full brake
   rolling_decel: 0.3       # m/s^2 with both pedals released
   drag: 0.004              # 1/m, decel = drag * v^2
-  gnss_noise: 0.02         # m, 1 sigma on the reported position
+  gnss_noise: 0.02         # m, 1 sigma of the pose the harness feeds its controller
+
+# What the sensors report, as opposed to what is true (mcq_sim/sensors.py). The
+# state estimator consumes these and is scored against the truth the simulator
+# keeps on /ego_truth.
+sensors:
+  gnss:
+    rate_hz: 20.0
+    latency: 0.08            # s between the fix being valid and the Jetson having it
+    sigma_fixed: 0.02        # m, 1 sigma horizontal, RTK fixed
+    sigma_float: 0.45        # m, RTK float
+    sigma_none: 25.0         # m, no fix: the position carries no information
+    vel_sigma_fixed: 0.03    # m/s per axis
+    vel_sigma_float: 0.20
+    vel_sigma_none: 5.0
+    # Piecewise-constant fix status, [[t_seconds, NONE|FLOAT|FIXED], ...],
+    # applied from each time onward. Scripted so a run is reproducible.
+    schedule: [[0.0, FIXED]]
+
+  imu:
+    rate_hz: 200.0
+    accel_sigma: 0.05        # m/s^2 per axis
+    gyro_sigma: 0.002        # rad/s per axis
+    accel_bias_walk: 0.01    # m/s^2 per root second
+    gyro_bias_walk: 0.0005   # rad/s per root second
+    accel_bias0: 0.05        # m/s^2, 1 sigma of the power-on bias
+    gyro_bias0: 0.005        # rad/s
+    gravity: 9.80665
+
+  wheel:
+    sigma: 0.05              # m/s per wheel
+    resolution: 0.05         # m/s, hall measurement quantization until Phase 1 measures it
+    rear_slip: 0.04          # fraction of speed added to the rears at full throttle
+
+  steering:
+    sigma: 0.002             # rad
+    bits: 14                 # absolute column encoder resolution
+    bias: 0.0                # rad, mounting offset
 
 planner:
   horizon_s: 2.5
