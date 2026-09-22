@@ -2,7 +2,11 @@
 
 2026-09-22: the state of the tree and the code that needs writing next, split into lanes that one person can own without blocking another. Task ids are stable; when a task is done, mark it here in the same pull request as the code.
 
-## 1. The ten assignments
+## 1. The assignments
+
+Two sets. The ten below are the program: each one is a piece of the stack and has an owner. The eight starter issues after them are small, self-contained pieces for people who are still learning to code, and they are real work rather than exercises: three of them fix something that is broken today.
+
+### The ten main assignments
 
 One owner each, in the order they should be handed out. Issue numbers match assignment numbers; task ids point at the detail in section 4. Sizes are days of focused work by one student who already has the container running; halve nothing for part-time reality, add to it.
 
@@ -23,9 +27,26 @@ Seven of the ten start today. Number 2 waits on number 1, number 4 waits on numb
 
 Held back on purpose for the next wave: the composable-node container (G2, needs 3 and 4 done), the Jetson image and the bench and kart launch files (G3), and the actuator output layer (F3, needs the actuator choices). Perception, MPC, LiDAR and the learned components are Phase 4 and later and nobody should start them while 1 through 4 are open.
 
+### Starter issues
+
+Ordered easiest first. None of them touch the driving graph, so a mistake cannot cost a session at the track. Each one has a real consumer named in its issue, which is how you can tell them apart from busywork.
+
+| Issue | Starter task | Size | Why it matters |
+| --- | --- | --- | --- |
+| #11 | Make the README build instructions work from a clean container | 0.5 d | The documented pip line omits four dependencies and `pytest` errors out on a missing optional import before any test runs |
+| #12 | Contributor onboarding, issue and PR templates | 0.5 d | `.github/` holds only `ci.yml`, and ten people are about to start at once |
+| #13 | Plot a track file to PNG | 1 to 2 d | Today a track file can only be checked by reading numbers; #5 and #14 both need to see the picture |
+| #15 | Session log folder and README generator | 1 d | docs/06 requires a parameter hash and a dirty-tree flag per log; nothing writes them, and the first track day is when that hurts |
+| #16 | Tests for the untested corners of the Python track model | 1 to 2 d | `track.py` is the reference #3 is checked against, so an untested behavior is one the C++ port can get wrong silently |
+| #14 | A test track that is not a constant-radius oval | 2 d | The whole stack is validated on one oval where curvature takes three values and width never changes |
+| #17 | Generate the CAN frame reference from the DBC | 1 to 2 d | Eight frames and no readable table; copies the `--check` generator pattern the repo already uses twice |
+| #18 | Fault injection coverage table | 1 to 2 d | Nobody can currently answer which of the 15 items in docs/04 section 7 is covered, and #8 and #9 need that answer |
+
+Two of these deliberately invite a finding instead of a clean pass. If the new track in #14 cannot be driven, or a behavior pinned in #16 looks wrong, that is the more valuable result and the issue says so. Do not let anyone tune a track or bless a bug to get a green check.
+
 ## 2. Where we left off
 
-Last commit is `39081d6` (2026-09-13), CI green on `main`, no open pull requests and no open issues. Everything since 2026-09-12 went into making the ROS 2 graph test deterministic in CI, and the outcome is worth stating because it constrains the work below: a participant joining the DDS graph mid-run freezes the rclpy nodes for 200 to 350 ms, the controller's 200 ms freshness check correctly requests an urgent stop, and the only reason CI passes today is process discipline (observers join before the nodes, the emulated gateway holds `RC` until the graph settles). That workaround disappears when the planner stops being Python (task C1).
+Last commit before this document was `39081d6` (2026-09-13), CI green on `main`, and no open pull requests. Everything since 2026-09-12 went into making the ROS 2 graph test deterministic in CI, and the outcome is worth stating because it constrains the work below: a participant joining the DDS graph mid-run freezes the rclpy nodes for 200 to 350 ms, the controller's 200 ms freshness check correctly requests an urgent stop, and the only reason CI passes today is process discipline (observers join before the nodes, the emulated gateway holds `RC` until the graph settles). That workaround disappears when the planner stops being Python (task C1).
 
 What runs today: the gateway core with the software half of the fault-injection list, the C control core, the DBC with generated codecs on both sides, the SocketCAN bridge and its host build over `vcan0`, the Python simulator and planner prototype, the ROS 2 graph driving 120 m of the synthetic oval in CI with the session recorded to MCAP, and the survey tool.
 
