@@ -1,6 +1,6 @@
-Frenet frame:
-s:
-d:
+Frenet frame: using vectors and derivatives to plot vehicle position to a reference path, coordinates are s and d
+s: longitudinal coordinates  
+d: lateral coordinates  
 centerline:
 half-width:
 raceline:
