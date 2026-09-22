@@ -66,8 +66,15 @@ def run(args):
     pending = defaultdict(deque)
     receipts = deque()
     publishers = {topic: node.create_publisher(types[topic], target, qos) for topic, target in inputs.items()}
+
+    def output_callback(topic):
+        def receive(message):
+            pending[topic].append(message)
+
+        return receive
+
     subscriptions = {
-        topic: node.create_subscription(types[topic], spec["topic"], lambda msg, t=topic: pending[t].append(msg), qos)
+        topic: node.create_subscription(types[topic], spec["topic"], output_callback(topic), qos)
         for topic, spec in outputs.items()
     }
     ticks = node.create_publisher(Header, "replay/tick", qos)
