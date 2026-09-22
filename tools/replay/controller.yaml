@@ -6,6 +6,7 @@ inputs:
   /trajectory: trajectory
   /ego_state: ego_state
   /vehicle_state: vehicle_state
+  /geofence_state: geofence_state
 outputs:
   /vehicle_command:
     topic: vehicle_command

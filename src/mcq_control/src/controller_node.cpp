@@ -100,7 +100,10 @@ public:
       replay_.received("ego_state", msg->header);
     });
     sub_geofence_ = create_subscription<GeofenceState>(
-      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) { geofence_ = msg; });
+      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) {
+        geofence_ = msg;
+        replay_.received("geofence_state", msg->header);
+      });
     sub_vehicle_ = create_subscription<VehicleState>(
       "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) {
         vehicle_ = msg;

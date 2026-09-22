@@ -31,10 +31,10 @@ index 4d0d6f6..21606f9 100644
    <export>
      <build_type>ament_cmake</build_type>
 diff --git a/src/mcq_control/src/controller_node.cpp b/src/mcq_control/src/controller_node.cpp
-index c21a774..bdd7ae3 100644
+index bd2ee4b..06b1e1c 100644
 --- a/src/mcq_control/src/controller_node.cpp
 +++ b/src/mcq_control/src/controller_node.cpp
-@@ -21,6 +21,7 @@
+@@ -22,6 +22,7 @@
  #include "mcq_msgs/msg/vehicle_state.hpp"
  #include "rclcpp/rclcpp.hpp"
  #include "rclcpp_components/register_node_macro.hpp"
@@ -42,7 +42,7 @@ index c21a774..bdd7ae3 100644
  
  namespace mcq_control
  {
-@@ -34,7 +35,7 @@ class ControllerNode : public rclcpp::Node
+@@ -36,7 +37,7 @@ class ControllerNode : public rclcpp::Node
  {
  public:
    explicit ControllerNode(const rclcpp::NodeOptions & options)
@@ -51,7 +51,7 @@ index c21a774..bdd7ae3 100644
    {
      const double rate_hz = declare_parameter<double>("rate_hz", 100.0);
      dt_ = static_cast<float>(1.0 / rate_hz);
-@@ -75,7 +76,7 @@ public:
+@@ -78,7 +79,7 @@ public:
  
      // Best-effort, keep-last: a slow subscriber (the recorder, the pit link)
      // must never back-pressure the control loop. Freshness is checked by age.
@@ -60,7 +60,7 @@ index c21a774..bdd7ae3 100644
      pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
      sub_traj_ = create_subscription<Trajectory>("trajectory", qos, [this](const Trajectory::SharedPtr msg) {
        if (!traj_) {
-@@ -84,6 +85,7 @@ public:
+@@ -87,6 +88,7 @@ public:
            (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
        }
        traj_ = msg;
@@ -68,12 +68,18 @@ index c21a774..bdd7ae3 100644
      });
      sub_ego_ = create_subscription<EgoState>("ego_state", qos, [this](const EgoState::SharedPtr msg) {
        if (!ego_) {
-@@ -92,11 +94,19 @@ public:
+@@ -95,13 +97,24 @@ public:
            (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
        }
        ego_ = msg;
 +      replay_.received("ego_state", msg->header);
      });
+     sub_geofence_ = create_subscription<GeofenceState>(
+-      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) { geofence_ = msg; });
++      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) {
++        geofence_ = msg;
++        replay_.received("geofence_state", msg->header);
++      });
      sub_vehicle_ = create_subscription<VehicleState>(
 -      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
 -    timer_ = create_wall_timer(
@@ -91,7 +97,7 @@ index c21a774..bdd7ae3 100644
      RCLCPP_INFO(get_logger(), "controller running at %.0f Hz", rate_hz);
    }
  
-@@ -134,9 +144,8 @@ private:
+@@ -139,9 +152,8 @@ private:
      a_t = pts.back().a;
    }
  
@@ -102,7 +108,7 @@ index c21a774..bdd7ae3 100644
      VehicleCommand cmd;
      cmd.header.stamp = now;
      cmd.header.frame_id = "base_link";
-@@ -215,6 +224,7 @@ private:
+@@ -225,6 +237,7 @@ private:
      pub_->publish(cmd);
    }
  
