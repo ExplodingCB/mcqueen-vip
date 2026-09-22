@@ -29,8 +29,10 @@ jobs:
           sudo apt-get install -y clang-format
           clang-format --dry-run -Werror firmware/gateway/src/*.c firmware/gateway/include/gateway/*.h \
             firmware/gateway/test/*.c src/mcq_control/core/src/*.c src/mcq_control/core/include/mcq/*.h \
-            src/mcq_control/core/test/*.c src/mcq_localization/core/src/*.c \
-            src/mcq_localization/core/include/mcq/*.h src/mcq_localization/core/test/*.c
+            src/mcq_control/core/test/*.c src/mcq_track/core/src/*.cpp \
+            src/mcq_track/core/include/mcq_track/*.hpp src/mcq_track/core/test/*.cpp src/mcq_track/src/*.cpp \
+            src/mcq_localization/core/src/*.c src/mcq_localization/core/include/mcq/*.h \
+            src/mcq_localization/core/test/*.c
       - name: CAN vectors and generated code are in sync with the DBC
         run: |
           python firmware/gateway/tools/gen_can_vectors.py --check
@@ -45,6 +47,11 @@ jobs:
           cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
           cmake --build src/mcq_control/core/build
           ctest --test-dir src/mcq_control/core/build --output-on-failure
+      - name: Track core host tests
+        run: |
+          cmake -S src/mcq_track/core -B src/mcq_track/core/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build src/mcq_track/core/build
+          ctest --test-dir src/mcq_track/core/build --output-on-failure
       - name: State estimator core host tests
         run: |
           cmake -S src/mcq_localization/core -B src/mcq_localization/core/build -DCMAKE_BUILD_TYPE=Release
@@ -95,7 +102,7 @@ jobs:
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          colcon test --packages-select mcq_control --event-handlers console_direct+
+          colcon test --packages-select mcq_control mcq_track --event-handlers console_direct+
           colcon test-result --verbose
           ros2 interface show mcq_msgs/msg/VehicleCommand
       - name: Graph smoke test with recording (cold start)
@@ -108,6 +115,15 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
           src/mcq_bringup/test/graph_smoke.sh control
+      - name: Shifted track geofence and covariance gate in the driving graph
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          src/mcq_bringup/test/geofence_graph.sh shift
+          sleep 3
+          src/mcq_bringup/test/geofence_graph.sh covariance
+          sleep 3
+          src/mcq_bringup/test/geofence_graph.sh missing
       - name: Session was recorded to MCAP
         run: |
           source /opt/ros/jazzy/setup.bash

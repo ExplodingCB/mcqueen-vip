@@ -90,7 +90,7 @@ Four things the documents claim exist and do not:
 | `base_link` and sensor frames from a bringup URDF | docs/02 section 3 | No URDF anywhere |
 | `clang-tidy` in CI | docs/06 section 3 | Only `clang-format` runs |
 
-Also unimplemented: all three services (`mcq_msgs/srv/LoadTrack`, `SetAutoSubmode`, `SetSpeedCap`) are defined and nothing offers them.
+`mcq/load_track` is implemented by `mcq_track/track_server`. `SetAutoSubmode` and `SetSpeedCap` remain defined but unimplemented.
 
 ## 3. Phase 0 exit test, what is left
 
@@ -106,7 +106,7 @@ Eight lanes. A, B, C and F are the critical path to Phase 1 and Phase 2; D, E, G
 
 **A2. `mcq_localization/state_estimator`.** Error-state EKF, dependency-free C core with its own cmake host tests in the shape of `src/mcq_control/core`, thin C++ node around it. IMU-driven predict at 200 Hz, GNSS position and velocity update at 20 Hz gated by status, wheel-speed longitudinal update, steering-angle yaw-rate consistency check through the bicycle model. Publishes `EgoState` and the `map` to `base_link` transform, grows covariance on `FLOAT`, dead-reckons in `odom` on `NONE`. Done when, against A1, position RMS against `/ego_truth` is under 0.10 m over five laps with RTK fixed (the Phase 1 exit number), yaw converges from GNSS course above 1 m/s, the 10 s outage ends in a covariance gate rather than a silent divergence, and a tick measures under 1 ms on the workstation.
 
-Decision A2 needs from lane B: `EgoState` carries `s` and `d`, and docs/02 gives Frenet lookup to `track_server`. Either the estimator links the same Frenet library or it leaves the fields to the track server. Settle it in writing before either lane is half done.
+Decision for A2 and B1: the estimator owns `EgoState.s` and `.d`, links the exported `mcq_track_core` C++ geometry and builds it from `TrackModel`. The track server never republishes `EgoState`. See docs/02 section 6.
 
 ### Lane B: track server (start now, one person)
 

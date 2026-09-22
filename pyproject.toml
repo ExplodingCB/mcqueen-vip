@@ -22,6 +22,6 @@ exclude = ["training/data/*.py", "training/data/tests/*.py"]
 known-first-party = ["mcq_sim"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests"]
+testpaths = ["src/mcq_track/test", "src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests"]
 pythonpath = ["src/mcq_sim"]
 addopts = "-q"
