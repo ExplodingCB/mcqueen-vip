@@ -1,13 +1,10 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
-#include <fstream>
 #include <limits>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "mcq_msgs/msg/ego_state.hpp"
 #include "mcq_msgs/msg/geofence_state.hpp"
@@ -74,6 +71,9 @@ private:
     const auto path = std::filesystem::path(directory);
     const auto metadata = YAML::LoadFile((path / "track.yaml").string());
     if (!metadata.IsMap()) throw std::invalid_argument("track.yaml must contain a mapping");
+    if (metadata["raceline"])
+      throw std::invalid_argument(
+        "raceline loading is unsupported until surveyed-boundary validation is implemented");
     const bool closed = metadata["closed"] ? metadata["closed"].as<bool>() : true;
     const auto id =
       metadata["track_id"] ? metadata["track_id"].as<std::string>() : path.filename().string();
@@ -94,55 +94,6 @@ private:
       model.centerline.push_back(point);
       model.width_left.push_back(static_cast<float>(sample.left));
       model.width_right.push_back(static_cast<float>(sample.right));
-    }
-    if (metadata["raceline"]) {
-      const auto raceline_path = path / metadata["raceline"].as<std::string>();
-      std::ifstream file(raceline_path);
-      if (!file) throw std::invalid_argument("cannot open raceline CSV");
-      std::string line;
-      double previous_s = -1;
-      std::vector<Sample> raceline_samples;
-      while (std::getline(file, line)) {
-        line = line.substr(0, line.find('#'));
-        if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
-        std::stringstream row(line);
-        std::string field;
-        std::vector<double> values;
-        while (std::getline(row, field, ';')) {
-          std::size_t used = 0;
-          const double value = std::stod(field, &used);
-          if (!std::isfinite(value) || field.find_first_not_of(" \t\r", used) != std::string::npos)
-            throw std::invalid_argument("invalid raceline value");
-          values.push_back(value);
-        }
-        if (
-          values.size() != 7 || line.back() == ';' || values[0] < 0 || values[0] <= previous_s ||
-          values[5] < 0)
-          throw std::invalid_argument(
-            "raceline requires seven finite columns, increasing s and nonnegative speed");
-        previous_s = values[0];
-        const auto sd = candidate->frenet(values[1], values[2]);
-        const auto widths = candidate->width_at(sd.first);
-        if (widths.first - sd.second <= 0 || widths.second + sd.second <= 0)
-          throw std::invalid_argument("raceline must stay between surveyed edges");
-        geometry_msgs::msg::Point point;
-        point.x = values[1];
-        point.y = values[2];
-        raceline_samples.push_back(
-          {point.x, point.y, widths.second + sd.second, widths.first - sd.second});
-        if (
-          std::abs(values[4]) > std::numeric_limits<float>::max() ||
-          values[5] > std::numeric_limits<float>::max())
-          throw std::invalid_argument("raceline exceeds TrackModel representation");
-        model.raceline.push_back(point);
-        model.raceline_kappa.push_back(static_cast<float>(values[4]));
-        model.raceline_v.push_back(static_cast<float>(values[5]));
-      }
-      const Track raceline_check(raceline_samples, closed);
-      if (raceline_check.samples().size() != raceline_samples.size())
-        throw std::invalid_argument("raceline cannot contain duplicate points");
-      if (model.raceline.size() < 3)
-        throw std::invalid_argument("raceline needs at least three points");
     }
     // All parsing and construction precede the swap. A failed reload preserves
     // the last known-good model, geometry and geofence.

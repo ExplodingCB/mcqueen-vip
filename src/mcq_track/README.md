@@ -6,12 +6,12 @@ reload, and `geofence_state` on each ego update and every 100 ms. Failed reloads
 preserve the live map. A new verdict is computed before publishing changed geometry.
 
 `track_dir` must contain `track.csv` (x, y, right width, left width) and
-`track.yaml` (`track_id`, `closed`, optional `raceline`). A raceline is a relative
-or absolute path to seven semicolon-separated columns: s, x, y, heading,
-curvature, target speed, target acceleration. The model transmits its geometry,
-curvature and speed; the planner reconstructs arc length and heading and computes
-acceleration as before. Raceline points must be distinct and inside the surveyed
-edges. Without a raceline the planner uses the centerline.
+`track.yaml` (`track_id`, `closed`). This server publishes a centerline reference.
+A configured YAML `raceline` or any populated raceline arrays in a received
+`TrackModel` are rejected. Validated raceline integration is deferred to issue #5:
+checking its knots alone does not prove that the spline or planned kart path
+stays within the surveyed polygon, especially across sparse turns or open ends.
+A rejected service request preserves the active map.
 
 The ROS-independent `mcq_track_core` library exports `mcq_track/track.hpp`.
 The future state estimator links this library and builds a `Track` from the
@@ -44,7 +44,8 @@ interiors. The oval sweep includes arbitrary offsets and queries around the seam
 
 After a ROS build, run `src/mcq_bringup/test/geofence_graph.sh shift` and the same
 command with `covariance`. Observers join before the graph. Both start FOLLOW,
-reject a malformed reload without changing the active map, inject a fault while
+reject malformed and unsupported raceline reloads without changing the active
+map, inject a fault while
 moving, and require the correct verdict, gateway urgent stop and standstill.
 The `missing` scenario stops delivering verdicts during AUTO and requires the
 controller to request urgent stop after the freshness budget. Every scenario also

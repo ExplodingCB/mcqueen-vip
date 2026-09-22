@@ -3,9 +3,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from mcq_sim.planner import FrenetPlanner, PlannerParams
 from mcq_sim.track import Track
-from mcq_sim.track_model import model_signature, reference_from_model, track_from_model
+from mcq_sim.track_model import model_signature, track_from_model
 
 
 def model():
@@ -51,33 +50,24 @@ def test_model_rejects_bad_geometry(fault):
         track_from_model(msg)
 
 
-def test_optional_raceline_reference():
+@pytest.mark.parametrize("fault", ["reordered_sparse", "open_endpoint", "curvature_only", "speed_only"])
+def test_nonempty_raceline_is_rejected_until_boundary_validation_exists(fault):
     msg = model()
-    track = track_from_model(msg)
-    assert reference_from_model(msg, track) == (track, None)
-    x, y, _ = track.cartesian(track.s, 0.2)
-    msg.raceline = [SimpleNamespace(x=a, y=b) for a, b in zip(x, y, strict=True)]
-    msg.raceline_kappa = list(track.kappa)
-    msg.raceline_v = [4.0] * len(x)
-    reference, raceline = reference_from_model(msg, track)
-    assert np.allclose(reference.x, x)
-    assert np.all(reference.w_left < track.w_left)
-    assert np.all(raceline.v == 4)
-    msg.raceline_v[0] = -1
-    with pytest.raises(ValueError):
-        reference_from_model(msg, track)
-
-
-def test_raceline_speed_closes_at_actual_track_length():
-    msg = model()
-    track = track_from_model(msg)
-    msg.raceline = msg.centerline
-    msg.raceline_kappa = list(track.kappa)
-    msg.raceline_v = [4.0] * len(track.x)
-    msg.raceline_v[0] = 2.0
-    reference, raceline = reference_from_model(msg, track)
-    planner = FrenetPlanner(reference, PlannerParams(), raceline=raceline)
-    seam_midpoint = 0.5 * (reference.s[-1] + reference.length)
-    assert planner._raceline_speed(reference.s[-1]) == pytest.approx(4.0)
-    assert planner._raceline_speed(seam_midpoint) == pytest.approx(3.0)
-    assert planner._raceline_speed(reference.length) == pytest.approx(2.0)
+    if fault == "reordered_sparse":
+        n = len(msg.centerline)
+        msg.raceline = [msg.centerline[i] for i in [0, n // 2, n // 4, 3 * n // 4]]
+        msg.raceline_kappa = [0.0] * 4
+        msg.raceline_v = [2.0] * 4
+    elif fault == "open_endpoint":
+        msg.closed = False
+        msg.centerline = [SimpleNamespace(x=x, y=0.0) for x in [0.0, 5.0, 10.0]]
+        msg.width_left = msg.width_right = [1.0] * 3
+        msg.raceline = [SimpleNamespace(x=x, y=0.0) for x in [-5.0, -2.0, 0.0]]
+        msg.raceline_kappa = [0.0] * 3
+        msg.raceline_v = [2.0] * 3
+    elif fault == "curvature_only":
+        msg.raceline_kappa = [0.0]
+    else:
+        msg.raceline_v = [2.0]
+    with pytest.raises(ValueError, match="raceline models are unsupported"):
+        track_from_model(msg)

@@ -16,7 +16,7 @@ from mcq_msgs.msg import Trajectory as TrajectoryMsg
 from mcq_sim.params import DEFAULT_CONFIG, load_params
 from mcq_sim.planner import FrenetPlanner, PlannerParams
 from mcq_sim.ros_utils import pose_to_yaw, trajectory_to_msg
-from mcq_sim.track_model import model_signature, reference_from_model, track_from_model
+from mcq_sim.track_model import model_signature, track_from_model
 
 
 class PlannerNode(Node):
@@ -67,7 +67,6 @@ class PlannerNode(Node):
         if key != self.model_key:
             try:
                 track = track_from_model(msg)
-                reference, raceline = reference_from_model(msg, track)
             except ValueError as error:
                 self.get_logger().error(f"invalid TrackModel: {error}")
                 self.planner = None
@@ -75,7 +74,7 @@ class PlannerNode(Node):
                 self.stop_requested = True
                 return
             self.track = track
-            self.planner = FrenetPlanner(reference, self.pp, mode=self.mode, raceline=raceline)
+            self.planner = FrenetPlanner(track, self.pp, mode=self.mode)
             self.model_key = key
             self.get_logger().info(f"planning on '{track.track_id}'")
         self.model_received = self.get_clock().now()

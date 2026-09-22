@@ -121,9 +121,7 @@ class FrenetPlanner:
         if self.raceline is None:
             return None
         rl = self.raceline
-        if self.track.closed:
-            return np.interp(np.mod(s, self.track.length), np.append(rl.s, self.track.length), np.append(rl.v, rl.v[0]))
-        return np.interp(s, rl.s, rl.v)
+        return np.interp(np.mod(s, rl.s[-1]), rl.s, rl.v)
 
     # --------------------------------------------------------------- plan
     def plan(

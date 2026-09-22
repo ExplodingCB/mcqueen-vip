@@ -20,6 +20,9 @@ def prepare(directory):
     # half-width 2.5 m plus 0.5 m inflation. Use explicit 2 m wide pavement.
     original = Track.synthetic_oval(width=2.0)
     original.save(directory / "original")
+    original.meta["raceline"] = "unvalidated.csv"
+    original.save(directory / "raceline")
+    original.meta.pop("raceline")
     shifted = original.shifted(0, 2)
     shifted.track_id = "shifted_2m"
     shifted.meta["track_id"] = shifted.track_id
@@ -42,6 +45,8 @@ class Checker(Node):
         self.invalid_future = None
         self.reload_future = None
         self.invalid_rejected = False
+        self.raceline_future = None
+        self.raceline_rejected = False
         self.reloaded = False
         self.clean = False
         self.reason_seen = False
@@ -132,7 +137,20 @@ class Checker(Node):
             if response.success or response.track_id != "synthetic_oval":
                 raise AssertionError("failed reload did not preserve active track")
             self.invalid_rejected = True
-        if self.injected is None and self.ready and self.v > 2 and self.clean and self.invalid_rejected:
+        if self.invalid_rejected and self.raceline_future is None:
+            request = LoadTrack.Request()
+            request.path = str(self.args.directory / "raceline")
+            self.raceline_future = self.client.call_async(request)
+        if self.raceline_future is not None and self.raceline_future.done() and not self.raceline_rejected:
+            response = self.raceline_future.result()
+            if (
+                response.success
+                or response.track_id != "synthetic_oval"
+                or "raceline loading is unsupported" not in response.message
+            ):
+                raise AssertionError("unsupported raceline reload did not fail closed")
+            self.raceline_rejected = True
+        if self.injected is None and self.ready and self.v > 2 and self.clean and self.raceline_rejected:
             self.injected = time.monotonic()
             self.get_logger().info(f"injecting {self.args.scenario} while FOLLOW drives at {self.v:.2f} m/s")
             if self.args.scenario == "shift":
