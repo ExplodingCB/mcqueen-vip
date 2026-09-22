@@ -4,20 +4,20 @@
 
 ## 1. The ten assignments
 
-One owner each, in the order they should be handed out. Task ids in the third column point at the detail in section 4. Sizes are days of focused work by one student who already has the container running; halve nothing for part-time reality, add to it.
+One owner each, in the order they should be handed out. Issue numbers match assignment numbers; task ids point at the detail in section 4. Sizes are days of focused work by one student who already has the container running; halve nothing for part-time reality, add to it.
 
-| # | Assignment | Tasks | Depends on | Size | Suits |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Sensor models and ground truth in the simulator | A1 | nothing | 3 to 4 d | Python, numpy, anyone comfortable with noise models |
-| 2 | EKF state estimator, plus the URDF and sensor frames it needs | A2, G1 | 1 | 2 to 3 wk | strongest available; C and estimation theory |
-| 3 | Track server in C++ with the geofence | B1 | nothing | 1 to 1.5 wk | C++, geometry, KD-trees |
-| 4 | Port the local planner to C and wrap it at 20 Hz | C1 | 3 | 1.5 to 2 wk | C and C++, reads Python well |
-| 5 | Raceline tooling around the TUM optimizer | D1 | nothing | 3 to 5 d | Python, optimization, self-contained |
-| 6 | Lap report tool and the CI gaps it exposed | E1, G4 | nothing | 3 to 4 d | Python and GitHub Actions; good first task |
-| 7 | Replay harness against recorded MCAP | E2 | nothing | 1 wk | Python, testing instincts |
-| 8 | Gateway board support and the board decision | F1 | board choice | 1.5 to 2 wk | embedded C, electrical sub-team |
-| 9 | CRSF receiver parsing with host tests | F2 | nothing | 3 to 5 d | embedded C; testable with no hardware |
-| 10 | Telemetry: foxglove bridge, layouts, lap timer | H1 | nothing | 4 to 5 d | Python and ROS 2, wants a visual eye |
+| # | Assignment | Issue | Tasks | Depends on | Size | Suits |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Sensor models and ground truth in the simulator | #1 | A1 | nothing | 3 to 4 d | Python, numpy, anyone comfortable with noise models |
+| 2 | EKF state estimator, plus the URDF and sensor frames it needs | #2 | A2, G1 | 1 | 2 to 3 wk | strongest available; C and estimation theory |
+| 3 | Track server in C++ with the geofence | #3 | B1 | nothing | 1 to 1.5 wk | C++, geometry, KD-trees |
+| 4 | Port the local planner to C and wrap it at 20 Hz | #4 | C1 | 3 | 1.5 to 2 wk | C and C++, reads Python well |
+| 5 | Raceline tooling around the TUM optimizer | #5 | D1 | nothing | 3 to 5 d | Python, optimization, self-contained |
+| 6 | Lap report tool and the CI gaps it exposed | #6 | E1, G4 | nothing | 3 to 4 d | Python and GitHub Actions; good first task |
+| 7 | Replay harness against recorded MCAP | #7 | E2 | nothing | 1 wk | Python, testing instincts |
+| 8 | Gateway board support and the board decision | #8 | F1 | board choice | 1.5 to 2 wk | embedded C, electrical sub-team |
+| 9 | CRSF receiver parsing with host tests | #9 | F2 | nothing | 3 to 5 d | embedded C; testable with no hardware |
+| 10 | Telemetry: foxglove bridge, layouts, lap timer | #10 | H1 | nothing | 4 to 5 d | Python and ROS 2, wants a visual eye |
 
 Seven of the ten start today. Number 2 waits on number 1, number 4 waits on number 3, and number 8 waits on the board choice between an STM32H7 carrier, a Teensy 4.1 and a comma panda, which is the longest-lead decision on this page.
 
