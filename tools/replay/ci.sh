@@ -6,6 +6,15 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 source_bag=$(realpath "$1")
 artifacts=$(realpath -m "${2:-$root/replay-artifacts}")
 mkdir -p "$artifacts"
+# Sourcing ROS does not remove an already sourced candidate overlay. Clear it
+# before selecting either build, and allow ROS setup's optional unset variables.
+use_workspace() {
+  set +u
+  unset AMENT_PREFIX_PATH CMAKE_PREFIX_PATH COLCON_PREFIX_PATH PYTHONPATH LD_LIBRARY_PATH ROS_PACKAGE_PATH
+  source /opt/ros/jazzy/setup.bash
+  if [ "$#" -gt 0 ]; then source "$1/install/local_setup.bash"; fi
+  set -u
+}
 baseline=$(mktemp -d /tmp/mcq-replay-reference.XXXXXX)
 trap 'rm -rf "$baseline"' EXIT
 revision=$(tr -d '\n' < "$root/tools/replay/reference/revision")
@@ -17,13 +26,12 @@ git -C "$root" archive "$revision" src/mcq_control src/mcq_msgs | tar -x -C "$ba
 (cd "$baseline" && git apply "$root/tools/replay/reference/enable-replay.patch")
 (
   cd "$baseline"
-  source /opt/ros/jazzy/setup.bash
+  use_workspace
   colcon build --packages-up-to mcq_control --event-handlers console_direct+ \
     --cmake-args -DCMAKE_BUILD_TYPE=Release
 ) 2>&1 | tee "$artifacts/reference-build.log"
 (
-  source /opt/ros/jazzy/setup.bash
-  source "$baseline/install/local_setup.bash"
+  use_workspace "$baseline"
   python3 "$root/tools/replay/replay.py" --bag "$source_bag" \
     --parameters "$baseline/src/mcq_control/config/controller.yaml" \
     --capture "$artifacts/reference" --node-log "$artifacts/reference-node.log"
@@ -40,7 +48,7 @@ manifest = {
     "baseline_revision": sys.argv[4],
     "candidate_revision": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
     "source_mcap_sha256": {
-        str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(source.rglob("*.mcap"))
+        str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in ([source] if source.is_file() else sorted(source.rglob("*.mcap")))
     },
     "instrumentation_sha256": hashlib.sha256((root / "tools/replay/reference/enable-replay.patch").read_bytes()).hexdigest(),
     "schedule": "receive order; explicit output header timestamps; each input acknowledged before next event",
@@ -48,8 +56,7 @@ manifest = {
 (artifacts / "provenance.json").write_text(json.dumps(manifest, indent=2) + "\n")
 PY
 (
-  source /opt/ros/jazzy/setup.bash
-  source "$root/install/local_setup.bash"
+  use_workspace "$root"
   python3 "$root/tools/replay/replay.py" --bag "$artifacts/reference" \
     --node-log "$artifacts/candidate-node.log"
 ) 2>&1 | tee "$artifacts/candidate-compare.log"
@@ -65,8 +72,7 @@ Path(sys.argv[2]).write_text(yaml.safe_dump(config))
 PY
 set +e
 (
-  source /opt/ros/jazzy/setup.bash
-  source "$root/install/local_setup.bash"
+  use_workspace "$root"
   python3 "$root/tools/replay/replay.py" --bag "$artifacts/reference" \
     --parameters "$artifacts/changed-gain.yaml" --node-log "$artifacts/changed-gain-node.log"
 ) > "$artifacts/changed-gain-compare.log" 2>&1
