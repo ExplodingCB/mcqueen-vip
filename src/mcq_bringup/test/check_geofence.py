@@ -52,6 +52,7 @@ class Checker(Node):
         self.distance = None
         self.failure = None
         self.model_count = 0
+        self.last_forwarded_geofence_stamp = None
         qos = qos_profile_sensor_data
         self.ego_pub = self.create_publisher(EgoState, "ego_state", qos)
         self.create_subscription(EgoState, "ego_truth", self.on_ego, qos)
@@ -81,6 +82,9 @@ class Checker(Node):
     def on_geofence(self, msg):
         if self.args.scenario != "missing" or self.injected is None:
             self.geofence_pub.publish(msg)
+            self.last_forwarded_geofence_stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        elif msg.violation:
+            self.failure = "missing-verdict test requires the live server verdict to remain clean"
         if not msg.violation:
             self.clean = True
         elif self.injected is None and msg.reason != GeofenceState.REASON_POSE_STALE:
@@ -98,7 +102,15 @@ class Checker(Node):
             self.rc_commands += 1
             if msg.request_urgent_stop:
                 self.failure = "controller requested urgent stop during RC startup"
-        if self.reason_seen and msg.request_urgent_stop:
+        if self.injected is not None and self.args.scenario == "missing" and msg.request_urgent_stop:
+            stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+            age = stamp - self.last_forwarded_geofence_stamp
+            if age < 0.2:
+                self.failure = f"missing-verdict stop preceded freshness budget: {age:.6f} s"
+            else:
+                self.reason_seen = True
+                self.stop_seen = True
+        elif self.reason_seen and msg.request_urgent_stop:
             self.stop_seen = True
 
     def on_vehicle(self, msg):
@@ -111,8 +123,6 @@ class Checker(Node):
         elapsed = time.monotonic() - self.started
         if self.failure:
             raise AssertionError(self.failure)
-        if self.args.scenario == "missing" and self.injected is not None:
-            self.reason_seen = time.monotonic() - self.injected > 0.2
         if self.invalid_future is None and self.client.service_is_ready() and self.clean:
             request = LoadTrack.Request()
             request.path = str(self.args.directory / "invalid")
