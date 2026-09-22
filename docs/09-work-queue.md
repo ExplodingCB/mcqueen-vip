@@ -4,7 +4,7 @@
 
 ## 1. The assignments
 
-Two sets. The ten below are the program: each one is a piece of the stack and has an owner. The eight starter issues after them are small, self-contained pieces for people who are still learning to code, and they are real work rather than exercises: three of them fix something that is broken today.
+Three tiers. The ten below are the program: each one is a piece of the stack and needs an owner who can carry it. The starter issues are small and self-contained, for people who can code but do not know this repository. The warm-ups are twenty minutes to two hours each, for people who are still learning to code at all, and they are still real work: every one of them fixes something that is wrong or missing today, and several have a guaranteed find waiting in them.
 
 ### The ten main assignments
 
@@ -37,12 +37,41 @@ Ordered easiest first. None of them touch the driving graph, so a mistake cannot
 | #12 | Contributor onboarding, issue and PR templates | 0.5 d | `.github/` holds only `ci.yml`, and ten people are about to start at once |
 | #13 | Plot a track file to PNG | 1 to 2 d | Today a track file can only be checked by reading numbers; #5 and #14 both need to see the picture |
 | #15 | Session log folder and README generator | 1 d | docs/06 requires a parameter hash and a dirty-tree flag per log; nothing writes them, and the first track day is when that hurts |
-| #16 | Tests for the untested corners of the Python track model | 1 to 2 d | `track.py` is the reference #3 is checked against, so an untested behavior is one the C++ port can get wrong silently |
 | #14 | A test track that is not a constant-radius oval | 2 d | The whole stack is validated on one oval where curvature takes three values and width never changes |
 | #17 | Generate the CAN frame reference from the DBC | 1 to 2 d | Eight frames and no readable table; copies the `--check` generator pattern the repo already uses twice |
 | #18 | Fault injection coverage table | 1 to 2 d | Nobody can currently answer which of the 15 items in docs/04 section 7 is covered, and #8 and #9 need that answer |
 
-Two of these deliberately invite a finding instead of a clean pass. If the new track in #14 cannot be driven, or a behavior pinned in #16 looks wrong, that is the more valuable result and the issue says so. Do not let anyone tune a track or bless a bug to get a green check.
+#14 deliberately invites a finding instead of a clean pass: if the new track cannot be driven, that is the more valuable result and the issue says so. Do not let anyone tune a track to get a green check.
+
+### Warm-ups
+
+Twenty minutes to two hours each. Ordered easiest first. None of them require knowing the codebase in advance, and four of them teach it as a side effect.
+
+| Issue | Warm-up | Size | What it fixes |
+| --- | --- | --- | --- |
+| #19 | Turn on pre-commit and fix what it flags | 20 min | The config has been in the repo since the first commit and nothing tells anyone to enable it |
+| #20 | Two package READMEs describe code that already exists as "next" | 1 h | `mcq_sim` and `mcq_control` both call their ROS 2 node future work; both nodes drive the oval in CI |
+| #21 | Run the simulator at five speed caps and write down the numbers | 1 h | No baseline exists, so no future change can be compared against anything |
+| #16 | Tests for the three untested functions in the track model | 1 to 2 h | `wrap_angle`, `width_at` and the arc-length wrap in `cartesian` have no test, and #3 is checked against this file |
+| #22 | A script that prints a track's numbers | 1 to 2 h | A track file can only be inspected by reading raw CSV |
+| #23 | A glossary for the terms in our own documents | 1 to 2 h | Nobody new can read docs/02 without stopping, and the newest member is the right author |
+| #24 | A link checker for the docs | 1 to 2 h | Three documents point at a file that was never committed and nothing noticed for ten days |
+
+Four of these are deliberately written to produce a finding rather than a clean pass: #16 if one of the three functions is wrong, #21 if lap times stop improving with the cap, #22 if the oval's length disagrees with `tracks/README.md`, #24 which has a known broken link waiting for it. Tell whoever takes them that reporting the finding is the success condition, because a beginner's instinct is to make the check green instead.
+
+### If it is two of you doing the hard work
+
+Ten assignments assume ten owners. With two people who can carry a lane, the honest plan is narrower than the list above, and it is better to say which things are not happening than to leave ten issues open and discover it in November.
+
+Take these two in order. One person owns #1 then #2 end to end: it is the longest single piece of work here, it produces the Phase 1 exit number (0.10 m RMS fused pose), and it does not split usefully between people. The other works #8 with the electrical sub-team, because nothing drives autonomously until the board exists; if the electrical side can own #8 outright, that person takes #3 instead.
+
+Give #10 (telemetry) to the strongest of the inexperienced group with close review. It is Python, it is visual, mistakes are obvious within seconds, and it has to exist before the first outdoor test. #9 (CRSF parsing) is the one embedded task a careful but inexperienced person can do, because it is pure parsing with host tests and needs no hardware.
+
+Let #4, #5 and #7 wait. #4 is quality of life and a hazard class removed, not a Phase 1 requirement. #7 closes a Phase 0 box that stays closed harmlessly for a few more weeks. #5 is a week of someone's time for lap time we cannot use until the kart exists.
+
+Review load is the real constraint, not writing code. Every beginner pull request costs one of you 20 to 40 minutes, and a badly shaped one costs more than writing it yourself would have. So keep three or four beginner issues in flight at a time and no more, ask for the pull request early and small rather than finished and large, and require the command output pasted into the pull request so a claim can be checked without rebuilding anything.
+
+Pairing beats parallelism with a team shaped like this. Attach an inexperienced person to #1, #2 or #3 as the second: their job is to run the thing, write one test for it, and update the package README when it lands. That work compounds with the lane instead of adding another branch to review. Issues are a backlog, not a queue that has to be drained.
 
 ## 2. Where we left off
 
