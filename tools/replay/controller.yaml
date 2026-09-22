@@ -1,0 +1,16 @@
+# Driver protocol is node-independent. Paths resolve relative to this file.
+command: [ros2, run, mcq_control, controller_node]
+node_name: controller
+parameters: ../../src/mcq_control/config/controller.yaml
+inputs:
+  /trajectory: trajectory
+  /ego_state: ego_state
+  /vehicle_state: vehicle_state
+outputs:
+  /vehicle_command:
+    topic: vehicle_command
+    tolerances:
+      steering_angle: {abs: 0.00001}
+      throttle: {abs: 0.00001}
+      brake: {abs: 0.00001}
+# Every other leaf is exact, including header, enables, stop flag and heartbeat.

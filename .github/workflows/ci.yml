@@ -88,10 +88,12 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential cmake python3-numpy python3-scipy python3-yaml python3-pytest
+          apt-get install -y --no-install-recommends build-essential cmake python3-numpy python3-scipy python3-yaml python3-pytest ros-jazzy-rosbag2-py ros-jazzy-rosbag2-storage-mcap
           rosdep update --rosdistro jazzy
           rosdep install --from-paths src --ignore-src -y --rosdistro jazzy
       - name: Build
@@ -134,3 +136,14 @@ jobs:
           grep -q "/ego_state" bag_info.txt
           grep -q "/vehicle_command" bag_info.txt
           grep -q "/trajectory" bag_info.txt
+      - name: Deterministic MCAP controller replay and gain mutation check
+        run: |
+          tools/replay/ci.sh /tmp/phase0_bag "$GITHUB_WORKSPACE/replay-artifacts"
+      - name: Replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: controller-replay
+          path: replay-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

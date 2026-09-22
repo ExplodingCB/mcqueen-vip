@@ -1,0 +1,174 @@
+diff --git a/src/mcq_control/CMakeLists.txt b/src/mcq_control/CMakeLists.txt
+index e7ab204..6d003d9 100644
+--- a/src/mcq_control/CMakeLists.txt
++++ b/src/mcq_control/CMakeLists.txt
+@@ -8,6 +8,7 @@ find_package(ament_cmake REQUIRED)
+ find_package(rclcpp REQUIRED)
+ find_package(rclcpp_components REQUIRED)
+ find_package(mcq_msgs REQUIRED)
++find_package(std_msgs REQUIRED)
+ 
+ # The control math, built exactly as it is built standalone (host tests included,
+ # they run under colcon test as ctest tests).
+@@ -20,6 +21,7 @@ target_link_libraries(controller_component PUBLIC
+   rclcpp::rclcpp
+   rclcpp_components::component
+   ${mcq_msgs_TARGETS}
++  ${std_msgs_TARGETS}
+ )
+ rclcpp_components_register_node(controller_component
+   PLUGIN "mcq_control::ControllerNode"
+diff --git a/src/mcq_control/package.xml b/src/mcq_control/package.xml
+index 4d0d6f6..21606f9 100644
+--- a/src/mcq_control/package.xml
++++ b/src/mcq_control/package.xml
+@@ -12,6 +12,7 @@
+   <depend>rclcpp</depend>
+   <depend>rclcpp_components</depend>
+   <depend>mcq_msgs</depend>
++  <depend>std_msgs</depend>
+ 
+   <export>
+     <build_type>ament_cmake</build_type>
+diff --git a/src/mcq_control/src/controller_node.cpp b/src/mcq_control/src/controller_node.cpp
+index c21a774..bdd7ae3 100644
+--- a/src/mcq_control/src/controller_node.cpp
++++ b/src/mcq_control/src/controller_node.cpp
+@@ -21,6 +21,7 @@
+ #include "mcq_msgs/msg/vehicle_state.hpp"
+ #include "rclcpp/rclcpp.hpp"
+ #include "rclcpp_components/register_node_macro.hpp"
++#include "replay_step.hpp"
+ 
+ namespace mcq_control
+ {
+@@ -34,7 +35,7 @@ class ControllerNode : public rclcpp::Node
+ {
+ public:
+   explicit ControllerNode(const rclcpp::NodeOptions & options)
+-  : rclcpp::Node("controller", options)
++  : rclcpp::Node("controller", options), replay_(*this)
+   {
+     const double rate_hz = declare_parameter<double>("rate_hz", 100.0);
+     dt_ = static_cast<float>(1.0 / rate_hz);
+@@ -75,7 +76,7 @@ public:
+ 
+     // Best-effort, keep-last: a slow subscriber (the recorder, the pit link)
+     // must never back-pressure the control loop. Freshness is checked by age.
+-    const auto qos = rclcpp::SensorDataQoS();
++    const auto qos = replay_.qos();
+     pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
+     sub_traj_ = create_subscription<Trajectory>("trajectory", qos, [this](const Trajectory::SharedPtr msg) {
+       if (!traj_) {
+@@ -84,6 +85,7 @@ public:
+           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
+       }
+       traj_ = msg;
++      replay_.received("trajectory", msg->header);
+     });
+     sub_ego_ = create_subscription<EgoState>("ego_state", qos, [this](const EgoState::SharedPtr msg) {
+       if (!ego_) {
+@@ -92,11 +94,19 @@ public:
+           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
+       }
+       ego_ = msg;
++      replay_.received("ego_state", msg->header);
+     });
+     sub_vehicle_ = create_subscription<VehicleState>(
+-      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
+-    timer_ = create_wall_timer(
+-      std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(); });
++      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) {
++        vehicle_ = msg;
++        replay_.received("vehicle_state", msg->header);
++      });
++    if (replay_.enabled()) {
++      replay_.start([this](const rclcpp::Time & stamp) { tick(stamp); });
++    } else {
++      timer_ = create_wall_timer(
++        std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(this->now()); });
++    }
+     RCLCPP_INFO(get_logger(), "controller running at %.0f Hz", rate_hz);
+   }
+ 
+@@ -134,9 +144,8 @@ private:
+     a_t = pts.back().a;
+   }
+ 
+-  void tick()
++  void tick(const rclcpp::Time & now)
+   {
+-    const rclcpp::Time now = this->now();
+     VehicleCommand cmd;
+     cmd.header.stamp = now;
+     cmd.header.frame_id = "base_link";
+@@ -215,6 +224,7 @@ private:
+     pub_->publish(cmd);
+   }
+ 
++  mcq_replay::ReplayStep replay_;
+   float dt_{0.01f};
+   double trajectory_max_age_{0.2};
+   double ego_max_age_{0.1};
+diff --git a/src/mcq_control/src/replay_step.hpp b/src/mcq_control/src/replay_step.hpp
+new file mode 100644
+index 0000000..993c4f9
+--- /dev/null
++++ b/src/mcq_control/src/replay_step.hpp
+@@ -0,0 +1,56 @@
++// Optional transport for deterministic tests of the real ROS node. New nodes
++// can reuse this helper with a topic map; the replay driver has no node logic.
++#pragma once
++
++#include <functional>
++#include <string>
++
++#include "rclcpp/rclcpp.hpp"
++#include "std_msgs/msg/header.hpp"
++
++namespace mcq_replay
++{
++class ReplayStep
++{
++public:
++  explicit ReplayStep(rclcpp::Node & node) : node_(node)
++  {
++    enabled_ = node_.declare_parameter<bool>("replay_mode", false);
++    if (enabled_) {
++      received_ = node_.create_publisher<std_msgs::msg::Header>("replay/received", qos());
++    }
++  }
++
++  bool enabled() const { return enabled_; }
++
++  rclcpp::QoS qos() const
++  {
++    if (enabled_) {
++      return rclcpp::QoS(rclcpp::KeepAll()).reliable();
++    }
++    return rclcpp::SensorDataQoS();
++  }
++
++  void received(const std::string & topic, const std_msgs::msg::Header & header)
++  {
++    if (enabled_) {
++      auto receipt = header;
++      receipt.frame_id = topic;
++      received_->publish(receipt);
++    }
++  }
++
++  void start(std::function<void(const rclcpp::Time &)> step)
++  {
++    tick_ = node_.create_subscription<std_msgs::msg::Header>(
++      "replay/tick", qos(),
++      [step](const std_msgs::msg::Header::SharedPtr msg) { step(rclcpp::Time(msg->stamp)); });
++  }
++
++private:
++  rclcpp::Node & node_;
++  bool enabled_;
++  rclcpp::Publisher<std_msgs::msg::Header>::SharedPtr received_;
++  rclcpp::Subscription<std_msgs::msg::Header>::SharedPtr tick_;
++};
++}  // namespace mcq_replay
