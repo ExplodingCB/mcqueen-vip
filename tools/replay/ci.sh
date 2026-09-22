@@ -21,8 +21,8 @@ revision=$(tr -d '\n' < "$root/tools/replay/reference/revision")
 # This immutable source revision is independent of the candidate. Only the
 # checked-in transport instrumentation patch is applied, never candidate core,
 # node behavior or parameters. Updating it is an explicit review decision.
-git -C "$root" cat-file -e "$revision^{commit}"
-git -C "$root" archive "$revision" src/mcq_control src/mcq_msgs | tar -x -C "$baseline"
+git -c safe.directory="$root" -C "$root" cat-file -e "$revision^{commit}"
+git -c safe.directory="$root" -C "$root" archive "$revision" src/mcq_control src/mcq_msgs | tar -x -C "$baseline"
 (cd "$baseline" && git apply "$root/tools/replay/reference/enable-replay.patch")
 (
   cd "$baseline"
@@ -46,7 +46,7 @@ from pathlib import Path
 root, source, artifacts = map(Path, sys.argv[1:4])
 manifest = {
     "baseline_revision": sys.argv[4],
-    "candidate_revision": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
+    "candidate_revision": subprocess.check_output(["git", "-c", f"safe.directory={root}", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
     "source_mcap_sha256": {
         str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in ([source] if source.is_file() else sorted(source.rglob("*.mcap")))
     },
