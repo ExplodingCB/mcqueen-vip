@@ -8,6 +8,8 @@ python -m mcq_sim make-track --out tracks/synthetic_oval
 from __future__ import annotations
 
 import argparse
+import csv
+import json
 import sys
 from pathlib import Path
 
@@ -58,6 +60,41 @@ def cmd_make_track(args) -> int:
     return 0
 
 
+def cmd_simulate(args) -> int:
+    from mcq_sim.environment import Simulator, evaluate
+
+    sim = Simulator(
+        Track.load(args.track), config=args.kart_config, policy=args.policy, speed_cap=args.speed_cap, seed=args.seed
+    )
+    if args.command == "view":
+        from mcq_sim.viewer import serve
+
+        serve(sim, args.port)
+        return 0
+    report = evaluate(sim, args.seconds, args.laps)
+    output = Path(args.out)
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "report.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    if sim.log:
+        with (output / "telemetry.csv").open("w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=list(sim.log[0]))
+            writer.writeheader()
+            writer.writerows(sim.log)
+    print(json.dumps(report, indent=2, allow_nan=False))
+    return 0 if report["passed"] else 1
+
+
+def cmd_validate(args) -> int:
+    from mcq_sim.validation import validate_recording
+
+    report = validate_recording(args.recording, args.kart_config)
+    output = Path(args.out)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(json.dumps(report, indent=2, allow_nan=False))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="mcq_sim", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -86,6 +123,30 @@ def main(argv=None) -> int:
     mk.add_argument("--width", type=float, default=5.0)
     mk.add_argument("--spacing", type=float, default=1.0)
     mk.set_defaults(func=cmd_make_track)
+
+    for name, help_text in (
+        ("view", "open the local visual simulator"),
+        ("evaluate", "evaluate a controller or camera model with dynamic kart physics"),
+    ):
+        command = sub.add_parser(name, help=help_text)
+        command.add_argument("--track", default="tracks/purdue_gp")
+        command.add_argument("--kart-config", help="dynamics, camera and provenance YAML")
+        command.add_argument("--policy", default="reference", help="reference, camera-demo, or Python module:factory")
+        command.add_argument("--speed-cap", type=float, default=4.0)
+        command.add_argument("--seed", type=int, default=0)
+        if name == "view":
+            command.add_argument("--port", type=int, default=8765)
+        else:
+            command.add_argument("--seconds", type=float, default=180.0)
+            command.add_argument("--laps", type=int, default=1)
+            command.add_argument("--out", default="logs/simulator")
+        command.set_defaults(func=cmd_simulate)
+
+    validation = sub.add_parser("validate", help="replay a continuous measured telemetry CSV")
+    validation.add_argument("recording")
+    validation.add_argument("--kart-config")
+    validation.add_argument("--out", default="logs/validation.json")
+    validation.set_defaults(func=cmd_validate)
 
     args = parser.parse_args(argv)
     return args.func(args)

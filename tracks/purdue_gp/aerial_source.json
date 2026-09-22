@@ -1,0 +1,34 @@
+{
+  "service": "https://di-ingov.img.arcgis.com/arcgis/rest/services/DynamicWebMercator/Indiana_Current_Imagery/ImageServer",
+  "request_parameters": {
+    "f": "json",
+    "bbox": "-9678801.188808626,4929614.064194393,-9678494.971462855,4929891.956435679",
+    "bboxSR": 3857,
+    "imageSR": 3857,
+    "size": "1600,1452",
+    "format": "png",
+    "bandIds": "0,1,2",
+    "mosaicRule": "{\"mosaicMethod\": \"esriMosaicLockRaster\", \"lockRasterIds\": [270339]}"
+  },
+  "retrieved": "2026-09-22",
+  "raster_id": 270339,
+  "raster_name": "in2023_29901890_06",
+  "capture_year": "2023",
+  "native_resolution": "6 inches",
+  "license": "CC0 per service copyrightText",
+  "export": {
+    "width": 1600,
+    "height": 1452,
+    "extent": {
+      "xmin": -9678801.188808626,
+      "ymin": 4929614.064194392,
+      "xmax": -9678494.971462855,
+      "ymax": 4929891.956435679,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "scale": 0
+  }
+}

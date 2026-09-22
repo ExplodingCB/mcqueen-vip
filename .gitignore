@@ -20,6 +20,7 @@ logs/
 # Editors
 .vscode/
 .idea/
+.DS_Store
 *.swp
 
 # Footage never enters git
@@ -30,4 +31,5 @@ training/data/manifest.jsonl
 # Host builds of the C libraries
 firmware/gateway/build/
 src/mcq_control/core/build/
+src/mcq_localization/core/build/
 *.egg-info/

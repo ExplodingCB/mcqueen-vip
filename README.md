@@ -8,6 +8,11 @@ Status: Phase 0 in progress. The design draft is in `docs/`; the code that exist
 
 ## Quick facts
 
+The provisional Purdue simulator now runs locally with a visual viewer,
+camera-model interface and recorded-command replay. See [the simulator guide](docs/10-simulator.md).
+Its 435.07 m centerline uses the user's refined KML, with pavement edges estimated
+from a georeferenced Indiana orthophoto. These remain estimates pending an RTK survey.
+
 | Item | Value |
 | --- | --- |
 | Track | 0.2698 mi (434 m), 5 turns, asphalt |
@@ -33,6 +38,8 @@ Status: Phase 0 in progress. The design draft is in `docs/`; the code that exist
 | [docs/07-references.md](docs/07-references.md) | Sources checked while writing this draft |
 | [docs/08-training-data.md](docs/08-training-data.md) | Where onboard kart footage exists, how much, under what terms, and the ingest pipeline in `training/data/` |
 | [docs/09-work-queue.md](docs/09-work-queue.md) | Where the tree stands and the code that needs writing next, in lanes one person can own |
+| [docs/10-simulator.md](docs/10-simulator.md) | Visual Purdue simulator, camera-model interface and physics assumptions |
+| [docs/11-simulator-validation.md](docs/11-simulator-validation.md) | Measured telemetry replay and accuracy validation contract |
 
 ## The stack in one paragraph
 
@@ -49,7 +56,7 @@ mcqueen-vip/
     mcq_msgs/            * message and service definitions
     mcq_bringup/         * launch files and parameter sets per kart and per environment
     mcq_vehicle/         * SocketCAN bridge to the gateway; dbc/mcqueen.dbc is the frame definition
-    mcq_localization/      GNSS + IMU + wheel + steering fusion, track frame management
+    mcq_localization/    * GNSS + IMU + wheel + steering fusion; core/ is a pure C EKF
     mcq_track/             track model, Frenet utilities, raceline loading, geofence
     mcq_planning/          local planner, boundary-only planner, speed profile
     mcq_control/         * lateral and longitudinal controllers; core/ is a pure C library
@@ -83,6 +90,11 @@ ctest --test-dir firmware/gateway/build --output-on-failure
 cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
 cmake --build src/mcq_control/core/build
 ctest --test-dir src/mcq_control/core/build --output-on-failure
+
+# State estimator core (EKF, delayed-fix replay, small dense linear algebra)
+cmake -S src/mcq_localization/core -B src/mcq_localization/core/build -DCMAKE_BUILD_TYPE=Release
+cmake --build src/mcq_localization/core/build
+ctest --test-dir src/mcq_localization/core/build --output-on-failure
 
 # Simulator, DBC and training tooling tests
 python -m pytest -q

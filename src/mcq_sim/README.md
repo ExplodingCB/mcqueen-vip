@@ -2,6 +2,12 @@
 
 Kart model, Frenet planner prototype and the closed-loop harness. Runs on a laptop with numpy and scipy; nothing here runs on the kart. Controllers come from the C library in `src/mcq_control/core` through ctypes (built on first use if cmake is present).
 
+The new Purdue environment adds a visual viewer, dynamic tire/actuator model,
+front-camera segmentation interface and measured-log replay. Start with
+`python -m mcq_sim view --port 0`. See [the simulator guide](../../docs/10-simulator.md)
+and [track provenance](../../tracks/purdue_gp/README.md). This environment is
+uncalibrated; passing a simulated lap is not proof of real-kart accuracy.
+
 ```
 export PYTHONPATH=src/mcq_sim
 python -m mcq_sim run --track tracks/synthetic_oval --laps 3            # FOLLOW mode, 5 m/s cap
