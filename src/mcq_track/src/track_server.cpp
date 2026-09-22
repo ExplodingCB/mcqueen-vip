@@ -1,5 +1,6 @@
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <limits>
 #include <memory>
@@ -138,9 +139,21 @@ private:
         message.reason = GeofenceState::REASON_OUTSIDE_TRACK;
       }
     }
+    if (message.violation && message.reason != last_reason_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "geofence violation reason=%u, pose_age=%.3f s, inflated_clearance=%.3f m, "
+        "covariance_xx=%.6f, covariance_xy=%.6f, covariance_yy=%.6f",
+        static_cast<unsigned>(message.reason), age, static_cast<double>(message.distance_to_edge),
+        ego_->covariance[0], ego_->covariance[1], ego_->covariance[7]);
+    } else if (!message.violation && last_reason_ != GeofenceState::REASON_NONE) {
+      RCLCPP_INFO(get_logger(), "geofence clear, pose_age=%.3f s", age);
+    }
+    last_reason_ = message.reason;
     pub_geofence_->publish(message);
   }
   double margin_, variance_max_, ego_max_age_;
+  uint8_t last_reason_{GeofenceState::REASON_NONE};
   std::unique_ptr<Track> track_;
   TrackModel model_;
   EgoState::SharedPtr ego_;

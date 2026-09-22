@@ -13,7 +13,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
-from mcq_msgs.msg import EgoState, GeofenceState, VehicleCommand
+from mcq_msgs.msg import EgoState, GeofenceState, VehicleCommand, VehicleState
 
 
 class Checker(Node):
@@ -28,6 +28,9 @@ class Checker(Node):
         self.stop_requests = 0  # while driving; a startup transient is not an intervention
         self.startup_stop_requests = 0
         self.geofence_violations = 0
+        self.startup_stale_poses = 0
+        self.vehicle_mode = None
+        self.auto_seen = False
         self.moving_since = None
         self.first_ego = None
         self.track_length = None
@@ -35,6 +38,7 @@ class Checker(Node):
         self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
         self.create_subscription(VehicleCommand, "vehicle_command", self.on_cmd, qos)
         self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, qos)
+        self.create_subscription(VehicleState, "vehicle_state", self.on_vehicle, qos)
         self.t0 = time.monotonic()
         self.last_report = self.t0
 
@@ -56,20 +60,40 @@ class Checker(Node):
     def on_cmd(self, msg):
         self.commands += 1
         if msg.request_urgent_stop:
-            if self.moving_since is None:
+            if not self.auto_seen and self.moving_since is None:
                 self.startup_stop_requests += 1
             else:
                 self.stop_requests += 1
 
+    def on_vehicle(self, msg):
+        self.vehicle_mode = msg.mode
+        self.auto_seen = self.auto_seen or msg.mode == VehicleState.MODE_AUTO
+
     def on_geofence(self, msg):
         if msg.violation:
-            self.geofence_violations += 1
+            # Stale localization during stationary RC startup is an unavailable
+            # AUTO input, not a driving intervention. Other reasons always fail;
+            # after the first AUTO sample every violation fails, even at zero speed.
+            startup_stale = (
+                msg.reason == GeofenceState.REASON_POSE_STALE
+                and self.vehicle_mode == VehicleState.MODE_RC
+                and not self.auto_seen
+                and self.moving_since is None
+            )
+            if startup_stale:
+                self.startup_stale_poses += 1
+            else:
+                self.geofence_violations += 1
+            self.get_logger().warning(
+                f"geofence reason={msg.reason}, clearance={msg.distance_to_edge:.3f} m, "
+                f"mode={self.vehicle_mode}, startup_stale={startup_stale}"
+            )
 
     def status(self):
         return (
             f"progress {self.progress:.1f} m, v_max {self.v_max:.2f} m/s, commands {self.commands}, "
             f"stop requests {self.stop_requests} (startup {self.startup_stop_requests}), "
-            f"geofence violations {self.geofence_violations}"
+            f"geofence violations {self.geofence_violations} (RC startup stale poses {self.startup_stale_poses})"
         )
 
     def verdict(self):
