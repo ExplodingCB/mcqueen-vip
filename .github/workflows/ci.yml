@@ -30,7 +30,9 @@ jobs:
           clang-format --dry-run -Werror firmware/gateway/src/*.c firmware/gateway/include/gateway/*.h \
             firmware/gateway/test/*.c src/mcq_control/core/src/*.c src/mcq_control/core/include/mcq/*.h \
             src/mcq_control/core/test/*.c src/mcq_track/core/src/*.cpp \
-            src/mcq_track/core/include/mcq_track/*.hpp src/mcq_track/core/test/*.cpp src/mcq_track/src/*.cpp
+            src/mcq_track/core/include/mcq_track/*.hpp src/mcq_track/core/test/*.cpp src/mcq_track/src/*.cpp \
+            src/mcq_localization/core/src/*.c src/mcq_localization/core/include/mcq/*.h \
+            src/mcq_localization/core/test/*.c
       - name: CAN vectors and generated code are in sync with the DBC
         run: |
           python firmware/gateway/tools/gen_can_vectors.py --check
@@ -50,6 +52,12 @@ jobs:
           cmake -S src/mcq_track/core -B src/mcq_track/core/build -DCMAKE_BUILD_TYPE=Release
           cmake --build src/mcq_track/core/build
           ctest --test-dir src/mcq_track/core/build --output-on-failure
+      - name: State estimator core host tests
+        run: |
+          cmake -S src/mcq_localization/core -B src/mcq_localization/core/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build src/mcq_localization/core/build
+          ctest --test-dir src/mcq_localization/core/build --output-on-failure
+
       - name: Virtual CAN interface for the gateway host simulator
         run: |
           if sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0; then

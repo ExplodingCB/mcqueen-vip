@@ -56,7 +56,7 @@ mcqueen-vip/
     mcq_msgs/            * message and service definitions
     mcq_bringup/         * launch files and parameter sets per kart and per environment
     mcq_vehicle/         * SocketCAN bridge to the gateway; dbc/mcqueen.dbc is the frame definition
-    mcq_localization/      GNSS + IMU + wheel + steering fusion, track frame management
+    mcq_localization/    * GNSS + IMU + wheel + steering fusion; core/ is a pure C EKF
     mcq_track/             track model, Frenet utilities, raceline loading, geofence
     mcq_planning/          local planner, boundary-only planner, speed profile
     mcq_control/         * lateral and longitudinal controllers; core/ is a pure C library
@@ -90,6 +90,11 @@ ctest --test-dir firmware/gateway/build --output-on-failure
 cmake -S src/mcq_control/core -B src/mcq_control/core/build -DCMAKE_BUILD_TYPE=Release
 cmake --build src/mcq_control/core/build
 ctest --test-dir src/mcq_control/core/build --output-on-failure
+
+# State estimator core (EKF, delayed-fix replay, small dense linear algebra)
+cmake -S src/mcq_localization/core -B src/mcq_localization/core/build -DCMAKE_BUILD_TYPE=Release
+cmake --build src/mcq_localization/core/build
+ctest --test-dir src/mcq_localization/core/build --output-on-failure
 
 # Simulator, DBC and training tooling tests
 python -m pytest -q
