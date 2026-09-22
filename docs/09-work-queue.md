@@ -2,7 +2,28 @@
 
 2026-09-22: the state of the tree and the code that needs writing next, split into lanes that one person can own without blocking another. Task ids are stable; when a task is done, mark it here in the same pull request as the code.
 
-## 1. Where we left off
+## 1. The ten assignments
+
+One owner each, in the order they should be handed out. Task ids in the third column point at the detail in section 4. Sizes are days of focused work by one student who already has the container running; halve nothing for part-time reality, add to it.
+
+| # | Assignment | Tasks | Depends on | Size | Suits |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Sensor models and ground truth in the simulator | A1 | nothing | 3 to 4 d | Python, numpy, anyone comfortable with noise models |
+| 2 | EKF state estimator, plus the URDF and sensor frames it needs | A2, G1 | 1 | 2 to 3 wk | strongest available; C and estimation theory |
+| 3 | Track server in C++ with the geofence | B1 | nothing | 1 to 1.5 wk | C++, geometry, KD-trees |
+| 4 | Port the local planner to C and wrap it at 20 Hz | C1 | 3 | 1.5 to 2 wk | C and C++, reads Python well |
+| 5 | Raceline tooling around the TUM optimizer | D1 | nothing | 3 to 5 d | Python, optimization, self-contained |
+| 6 | Lap report tool and the CI gaps it exposed | E1, G4 | nothing | 3 to 4 d | Python and GitHub Actions; good first task |
+| 7 | Replay harness against recorded MCAP | E2 | nothing | 1 wk | Python, testing instincts |
+| 8 | Gateway board support and the board decision | F1 | board choice | 1.5 to 2 wk | embedded C, electrical sub-team |
+| 9 | CRSF receiver parsing with host tests | F2 | nothing | 3 to 5 d | embedded C; testable with no hardware |
+| 10 | Telemetry: foxglove bridge, layouts, lap timer | H1 | nothing | 4 to 5 d | Python and ROS 2, wants a visual eye |
+
+Seven of the ten start today. Number 2 waits on number 1, number 4 waits on number 3, and number 8 waits on the board choice between an STM32H7 carrier, a Teensy 4.1 and a comma panda, which is the longest-lead decision on this page.
+
+Held back on purpose for the next wave: the composable-node container (G2, needs 3 and 4 done), the Jetson image and the bench and kart launch files (G3), and the actuator output layer (F3, needs the actuator choices). Perception, MPC, LiDAR and the learned components are Phase 4 and later and nobody should start them while 1 through 4 are open.
+
+## 2. Where we left off
 
 Last commit is `39081d6` (2026-09-13), CI green on `main`, no open pull requests and no open issues. Everything since 2026-09-12 went into making the ROS 2 graph test deterministic in CI, and the outcome is worth stating because it constrains the work below: a participant joining the DDS graph mid-run freezes the rclpy nodes for 200 to 350 ms, the controller's 200 ms freshness check correctly requests an urgent stop, and the only reason CI passes today is process discipline (observers join before the nodes, the emulated gateway holds `RC` until the graph settles). That workaround disappears when the planner stops being Python (task C1).
 
@@ -21,11 +42,11 @@ Four things the documents claim exist and do not:
 
 Also unimplemented: all three services (`mcq_msgs/srv/LoadTrack`, `SetAutoSubmode`, `SetSpeedCap`) are defined and nothing offers them.
 
-## 2. Phase 0 exit test, what is left
+## 3. Phase 0 exit test, what is left
 
 The roadmap's Phase 0 exit test has three parts. The graph against the simulator passes. Recording to MCAP passes; replay does not exist (task E2, and it does not need real logs, the CI bag is a fine first reference). The gateway fault-injection list passes in software on the host; the hardware-in-the-loop half needs the board (lane F).
 
-## 3. Lanes
+## 4. Lanes
 
 Eight lanes. A, B, C and F are the critical path to Phase 1 and Phase 2; D, E, G and H are each a week or less and unblock other people.
 
@@ -77,7 +98,7 @@ Decision A2 needs from lane B: `EgoState` carries `s` and `d`, and docs/02 gives
 
 **H1. `mcq_telemetry`.** `foxglove_bridge` launch, a 10 Hz aggregation node, a lap timer, and three layouts checked into `src/mcq_telemetry/layouts` (pit, localization debug, control debug). Done when the sim graph can be watched live from a second machine with the layouts in the repo. This has to exist before the first outdoor test, because nobody debugs a kart from a terminal.
 
-## 4. Order and parallelism
+## 5. Order and parallelism
 
 Start today with no dependencies: A1, B1, D1, E1, G1, G3, G4, H1. C1 waits on B1. A2 waits on A1. G2 waits on B1 and C1. Lane F waits on the board choice, which is the longest-lead decision on this page.
 
@@ -85,6 +106,6 @@ Critical path to the Phase 1 exit test (a logged RC lap, fused pose within 0.10 
 
 Not now, on purpose: perception, the learned components, MPC and LiDAR are Phase 4 and later, and the roadmap cuts them first if time runs out. Nobody should be starting them while lanes A through C are open.
 
-## 5. Process
+## 6. Process
 
 Sixteen commits have gone straight to `main`, which was fine with one author. docs/06 section 5 requires a branch per change and review by someone outside the author's sub-team, so before the next people start committing: branch protection on `main`, a `CODEOWNERS` file mapping the lanes above to reviewers, and `pre-commit install` in everyone's checkout (the config is already in the repo). One person, one afternoon.
