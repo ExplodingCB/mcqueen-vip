@@ -1,5 +1,7 @@
 # tracks
 
+Run `python tools/track_info.py tracks/synthetic_oval` from the repository root to print a track's geometry and survey metadata.
+
 One directory per track. `track.csv` is the centerline with half-widths in the
 TUM optimizer format (`# x_m, y_m, w_tr_right_m, w_tr_left_m`, map frame, about
 1 m spacing, closed loop). `track.yaml` carries the datum, the start/finish
