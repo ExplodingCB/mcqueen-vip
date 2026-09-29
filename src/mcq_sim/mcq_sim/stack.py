@@ -62,6 +62,7 @@ class StackEstimate:
     yaw_sigma: float
 
 
+STACK_MARGIN = 0.3  # m of planner edge margin: the body sweeps wider than the rear axle path in a corner
 REFERENCE_SLACK = 0.5  # m, kept from the edges beyond the kart's half width
 _reference_cache: dict[tuple, Track] = {}
 
@@ -86,6 +87,7 @@ class DrivingStack:
         speed_cap: float = 4.0,
         seed: int = 0,
         believed_track: Track | None = None,
+        perceive=None,
     ):
         self.track = track
         self.believed = believed_track or track
@@ -99,6 +101,9 @@ class DrivingStack:
         vehicle.rolling_decel = kart.rolling_decel
         self.vehicle = vehicle
         self.speed_cap = speed_cap
+        # With a perception source the planner drives between the edges it is
+        # given each cycle (BOUNDARY mode) and the map is not consulted.
+        self.perceive = perceive
         self.reset()
 
     # ------------------------------------------------------------------ setup
@@ -106,9 +111,13 @@ class DrivingStack:
         p = self.params
         planner_params = PlannerParams.from_dict(p.planner)
         planner_params.kart_half_width = self.kart.half_width
+        planner_params.smooth_boundary_reference = True
+        planner_params.margin = max(planner_params.margin, STACK_MARGIN)
         planner_params.kappa_max = math.tan(self.kart.steer_max) / self.kart.wheelbase
         self.reference = reference_for(self.believed, self.kart.half_width)
-        self.planner = FrenetPlanner(self.reference, planner_params)
+        self.planner = FrenetPlanner(self.reference, planner_params, mode="BOUNDARY" if self.perceive else "FOLLOW")
+        if self.perceive is not None and callable(getattr(self.perceive, "reset", None)):
+            self.perceive.reset(self.seed)
         self.controller = Controller(p, self.vehicle, self.dt)
         self.suite = SensorSuite.from_params(p.sensors, seed=self.seed)
         self.ekf = Ekf()
@@ -176,6 +185,15 @@ class DrivingStack:
         self.estimate = StackEstimate(out.x, out.y, out.yaw, max(out.v, 0.0), out.pos_sigma, out.yaw_sigma)
 
     # -------------------------------------------------------------- the tick
+    def _replan(self, s: DynamicState, e: StackEstimate, t: float) -> Trajectory | None:
+        bounds = None
+        if self.perceive is not None:
+            bounds = self.perceive(s)  # the camera sees the world; only its output comes back
+            if bounds is None:
+                self.stop_reason = self.stop_reason or "perception_no_drivable_path"
+                return self.trajectory
+        return self.planner.plan(e.x, e.y, e.yaw, e.v, t, stop_requested=self.stopping, bounds=bounds)
+
     def tick(self, s: DynamicState) -> tuple[float, float, float]:
         """One 100 Hz control cycle from the true state, which only the sensor
         models read. Returns steer, throttle, brake."""
@@ -188,7 +206,7 @@ class DrivingStack:
         # Jetson-side checks (docs/04-safety.md section 5), on the believed map
         # and the estimator's own doubt.
         if self.stop_reason is None:
-            edge = float(self.believed.distance_to_edge(e.x, e.y)[0])
+            edge = float(self.believed.distance_to_edge(e.x, e.y)[0]) if self.perceive is None else 0.0
             if edge < -self.geofence_margin:
                 self.stop_reason = "geofence"
             elif e.pos_sigma > self.geofence_margin:
@@ -197,8 +215,12 @@ class DrivingStack:
                 self.stop_reason = "yaw_rate_inconsistent"
 
         self.planner.p.v_cap = self.speed_cap
+        self.planner.p.boundary_v_cap = self.speed_cap
         if self.trajectory is None or t >= self.next_plan - 1e-9:
-            self.trajectory = self.planner.plan(e.x, e.y, e.yaw, e.v, t, stop_requested=self.stopping)
+            self.trajectory = self._replan(s, e, t)
+            if self.trajectory is None:  # nothing perceived yet: hold
+                self.command = (0.0, 0.0, 1.0)
+                return self.command
             if not self.trajectory.feasible and self.stop_reason is None:
                 self.stop_reason = "no_feasible_path"
             self.next_plan = t + self.planner_period

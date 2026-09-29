@@ -41,6 +41,19 @@ The planner follows a minimum-curvature line through the pavement rather than th
 
 The IMU is modeled at the rear axle, the estimator's `base_link`. The dynamics report acceleration at the center of gravity 0.6 m ahead of it, and moving it back matters: skipping the lever-arm terms cost a metre per second squared of lateral error through steering transitions and drove position error to 0.27 m RMS before the filter lost the fix. Real hardware will mount the IMU somewhere else, and the sensor frames in the URDF (task G1) are where that offset will be measured.
 
+## Perception in the loop
+
+`--perception` chooses what the stack's planner drives between. `map` (the default) follows the track file. `oracle` gives it the true edges from the true pose, standing in for perfect perception. `camera-demo` or a `module:factory` renders the front camera, runs the model and turns its mask into left and right edge polylines in the kart's frame (`mcq_sim/perception.py`), which the planner's BOUNDARY mode consumes. The map is not consulted in that mode and the geofence check is skipped, because the point is to drive from what the camera sees; the estimator still supplies pose and speed.
+
+```sh
+.venv/bin/python -m mcq_sim evaluate --policy stack --perception oracle
+PYTHONPATH=training/perception:src/mcq_sim .venv/bin/python -m mcq_sim evaluate --policy stack --perception segmenter:create
+```
+
+Where the mask's pavement runs off the edge of the image the edge is reported at the image border. That is a safe underestimate, and it is why edge accuracy at close range depends on the field of view as much as on the model. Two things had to change in the planner before even the oracle could drive the Purdue hairpin: BOUNDARY mode builds its reference from the midpoint of the perceived edges, which there is a curve tighter than the kart can turn, so the stack low-passes that midline along its arc length and keeps the widest smoothing that stays inside the corridor (`smooth_boundary_reference`). Progress is also now measured on a windowed projection, since the KML centerline's radius is smaller than the corridor half width in that hairpin and a global nearest-point projection jumps there.
+
+The first perception model and how it is trained and scored are in [training/perception](../training/perception/README.md).
+
 ## Connect a model
 
 Create an importable Python module with a zero-argument factory:

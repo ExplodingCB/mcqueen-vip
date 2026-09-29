@@ -58,3 +58,25 @@ Results, seed 0 unless stated, one Purdue lap, 240 s limit. Reports are not comm
 The last row is the intended behavior: at 6 m/s the outage drifts past the 0.5 m geofence margin, the covariance gate fires and the kart brakes to a stop with no boundary violation. Estimator error is against the truth at the same instant, from 2 s onward. Yaw RMS is 0.5 to 0.9 degrees.
 
 What this does not show. The estimator's noise parameters were written for these sensor models, so the numbers are a lower bound on what a kart will do. Minimum clearance of 0.15 to 0.26 m is much tighter than the reference driver's 1.0 m, because a minimum-curvature line cuts corners by design; it is a real property of this planner and this geometry, not a margin. The camera-demo driver and the perception path are untouched and their limitations above stand. The ROS 2 graph still runs the kinematic kart, and nothing here is calibrated against a real kart.
+
+## Perception in the loop and the first model, 2026-09-29
+
+The full stack can now drive from a camera model instead of the track file. The planner takes edge polylines recovered from a pavement mask (`--perception`, see [the simulator guide](10-simulator.md)). With the true edges as an oracle, the stack completes the Purdue lap in 106.1 s at a 4 m/s cap with zero boundary violations and 0.26 m minimum body clearance at the 0.3 m planner margin now used by the stack.
+
+Getting there exposed three things worth keeping. The planner's BOUNDARY reference (the midpoint of the perceived edges) is a 1.3 m radius curve in the Purdue hairpin, which no kart can follow; it now low-passes that midline. A bounded least-squares minimum-curvature solve was tried for the same job and did worse, leaving zigzags where a bound bound, so it is not used for the local reference. And progress was being measured by a global nearest-point projection that jumps in that hairpin, which stopped a run at 380 m with `track_projection_discontinuity`; it is now windowed.
+
+The first segmenter, an incomplete run stopped at epoch 4 of 12 (validation IoU on unseen random tracks 0.910, 0.899, 0.934, 0.944), was scored on frames from the Purdue track and the oval, neither ever trained on, 150 frames each. Edge error is the mean lateral error of each edge about 15 m ahead against the edges the true mask gives; the acceptance figure in docs/08 is under 0.3 m.
+
+| Frames | Track | Model | Pavement IoU | Edge error at 15 m | Both edges found |
+| --- | --- | --- | --- | --- | --- |
+| Randomized appearance | Purdue | trained | 0.931 | 0.71 m | 0.89 |
+| Randomized appearance | Purdue | color threshold | 0.406 | 5.23 m | 0.78 |
+| Simulator camera | Purdue | trained | 0.969 | 0.65 m | 0.93 |
+| Simulator camera | Oval | trained | 0.987 | 0.27 m | 0.99 |
+| Simulator camera | Purdue | color threshold | 1.000 | 0.0 m | 1.0 |
+
+The color threshold is exact on the simulator's flat camera and useless on varied appearance, which is why the simulator camera alone cannot train or judge anything. The trained model beats it easily on varied frames and does not yet meet the edge-error target on Purdue. Inference was 8 to 18 ms at p95 on the CPU of this laptop.
+
+Closed loop, epoch-4 model, Purdue, 4 m/s cap: the stack stops 2.0 m after the start line at 2.2 s with `no_feasible_path`. Pavement IoU over the 43 frames it saw was 0.857, below the 0.969 the model scored on random Purdue poses, so the start-line view is a harder frame than average, and the edges it produced left no corridor the planner would accept. The oracle drives the whole lap on the same path, so the failure is in the edges the model gives, not in the planner. It has not been diagnosed further; whether it is the model, the image-border edges near the camera, or a planner margin that is too strict for noisy edges is open.
+
+What this does not show: the model has never seen a real image, the appearance randomization is the author's guess at what cameras vary, and the run was stopped early so the numbers are an interim reading, not a result.
