@@ -54,7 +54,7 @@ mcqueen-vip/
     mcq_control/         * lateral and longitudinal controllers; core/ is a pure C library
     mcq_perception/        camera and LiDAR boundary extraction, kart detection (TensorRT)
     mcq_sim/             * kart model, Frenet planner prototype, closed-loop harness (Python)
-    mcq_telemetry/         pit-side dashboard bridge, RCS black box interface
+    mcq_telemetry/       * pit-side summary, lap timer and Foxglove layouts (RCS deferred)
   firmware/
     gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests, SocketCAN host build
   tools/

@@ -1,0 +1,8 @@
+telemetry:
+  ros__parameters:
+    rate_hz: 10.0
+    stale_after: 0.5
+    start_tolerance: 0.25       # m; standing start close to the finish segment
+    max_sample_gap: 0.5        # s; a gap invalidates the partial lap
+    max_sample_step: 5.0       # m; teleport protection
+    distance_resolution: 0.5   # m; ignore accumulated stationary GNSS jitter

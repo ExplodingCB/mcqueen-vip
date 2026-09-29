@@ -1,0 +1,158 @@
+{
+  "configById": {
+    "Plot!mcq1": {
+      "title": "Map position",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "X",
+          "value": "/ego_state.pose.position.x",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Y",
+          "value": "/ego_state.pose.position.y",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq2": {
+      "title": "Reference progress / deviation",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Progress",
+          "value": "/ego_state.s",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Deviation",
+          "value": "/ego_state.d",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq3": {
+      "title": "Pose uncertainty",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "X variance",
+          "value": "/ego_state.covariance[0]",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Y variance",
+          "value": "/ego_state.covariance[7]",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Yaw variance",
+          "value": "/ego_state.covariance[35]",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "",
+      "followingViewWidth": 30
+    },
+    "StateTransitions!mcq4": {
+      "title": "GNSS and localization freshness",
+      "paths": [
+        {
+          "value": "/telemetry/summary.gnss_status",
+          "label": "gnss_status",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.ego_valid",
+          "label": "ego_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "isSynced": true,
+      "xAxisRange": 30,
+      "timeWindowMode": "sliding"
+    },
+    "Plot!mcq5": {
+      "title": "State age",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Age",
+          "value": "/telemetry/summary.ego_age",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "s",
+      "followingViewWidth": 30
+    },
+    "RawMessages!mcq6": {
+      "title": "Pose / velocity / covariance",
+      "defaultExpanded": true,
+      "topicPath": "/ego_state",
+      "fontSize": 16
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "linkedGlobalVariables": [],
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "Plot!mcq1",
+      "second": {
+        "direction": "column",
+        "first": "Plot!mcq2",
+        "second": "Plot!mcq3",
+        "splitPercentage": 50.0
+      },
+      "splitPercentage": 33.333333333333336
+    },
+    "second": {
+      "direction": "column",
+      "first": "StateTransitions!mcq4",
+      "second": {
+        "direction": "column",
+        "first": "Plot!mcq5",
+        "second": "RawMessages!mcq6",
+        "splitPercentage": 50.0
+      },
+      "splitPercentage": 33.333333333333336
+    },
+    "splitPercentage": 50.0
+  }
+}

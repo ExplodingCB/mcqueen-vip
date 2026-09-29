@@ -6,8 +6,9 @@ ros2 launch mcq_bringup sim.launch.py track:=/path/to/tracks/my_track
 """
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -36,12 +37,31 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument("mode", default_value="FOLLOW", description="FOLLOW or BOUNDARY"),
             DeclareLaunchArgument("speed_cap", default_value="5.0", description="planner speed cap, m/s"),
+            DeclareLaunchArgument(
+                "telemetry", default_value="false", description="start pit telemetry and Foxglove bridge"
+            ),
+            DeclareLaunchArgument(
+                "handover_delay", default_value="2.0", description="seconds before simulated AUTO handover"
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("mcq_telemetry"),
+                            "launch",
+                            "telemetry.launch.py",
+                        ]
+                    )
+                ),
+                launch_arguments={"track": track}.items(),
+                condition=IfCondition(LaunchConfiguration("telemetry")),
+            ),
             Node(
                 package="mcq_sim",
                 executable="sim_node",
                 name="sim_node",
                 output="screen",
-                parameters=[{"track_dir": track}],
+                parameters=[{"track_dir": track, "handover_delay": LaunchConfiguration("handover_delay")}],
             ),
             Node(
                 package="mcq_sim",
