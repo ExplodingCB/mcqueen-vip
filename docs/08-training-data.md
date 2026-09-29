@@ -83,6 +83,10 @@ The most valuable footage is the easiest to clear. The Purdue Grand Prix Foundat
 
 Assetto Corsa with the Modular Kart mod and community kart circuits renders convincing POV footage but has no segmentation output without shader-patch hacks. CARLA gives pixel-perfect masks and is what the URJC-DeepRacer dataset used, but has no kart and no kart tracks. The route that fits this project is to build the Purdue track in Isaac Sim or Unity from the high-resolution scan the team is obtaining, drive the bicycle-model simulator through it, and render camera plus mask pairs with randomized lighting, weather and camera height. That is a Phase 4 task and depends on the scan.
 
+### 6.1 What exists now
+
+`training/perception` generates synthetic frames from randomly drawn closed tracks with randomized surfaces, shadows, edge paint, exposure and camera geometry, with exact labels from the simulator camera's ground-plane geometry, and trains a small segmenter on them. The Purdue track and the synthetic oval are never trained on. This is pretraining and a pipeline check, not a stand-in for section 7: nothing in it has seen a real photograph.
+
 ## 7. Acceptance for the first perception model
 
 The first model is a small segmentation network (pavement, not-pavement, kart) exported to TensorRT. It is trained on tier C, fine-tuned on tiers A and B, and evaluated only on held-out tier A laps at the Purdue track: mean IoU on the pavement class above 0.95 in daylight, boundary polyline error under 0.3 m at 15 m range after inverse perspective mapping, at 20 fps or better on the Orin. Until tier A exists, evaluation uses a held-out slice of tier B with the caveat that the camera does not match.

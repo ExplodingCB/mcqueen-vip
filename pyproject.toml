@@ -19,9 +19,9 @@ ignore = ["E741"]
 exclude = ["training/data/*.py", "training/data/tests/*.py"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["mcq_sim"]
+known-first-party = ["mcq_sim", "synth", "model", "segmenter"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests"]
-pythonpath = ["src/mcq_sim"]
+testpaths = ["src/mcq_sim/test", "src/mcq_vehicle/test", "tools/survey", "tools/logs", "firmware/gateway/host", "training/data/tests", "training/perception/tests"]
+pythonpath = ["src/mcq_sim", "training/perception"]
 addopts = "-q"

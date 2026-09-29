@@ -56,8 +56,7 @@ def smooth_reference(track: Track, keep: float, spacing: float = 0.5) -> Track:
     d2 = _second_difference(n)
     a = sp.vstack([d2 @ sp.diags(nx), d2 @ sp.diags(ny)]).tocsr()
     b = -np.concatenate([d2 @ cx, d2 @ cy])
-    solution = lsq_linear(a, b, bounds=(lower, np.maximum(upper, lower + 1e-9)), method="trf", lsmr_tol="auto")
-    d = solution.x
+    d = lsq_linear(a, b, bounds=(lower, np.maximum(upper, lower + 1e-9)), method="trf", lsmr_tol="auto").x
 
     x, y = cx + d * nx, cy + d * ny
     # Re-measure the edges from the new line: to first order the left edge is
@@ -73,3 +72,37 @@ def smooth_reference(track: Track, keep: float, spacing: float = 0.5) -> Track:
         track_id=f"{track.track_id}_min_curvature",
         meta=meta,
     )
+
+
+def smooth_local_reference(track: Track, keep: float, sigmas=(4.0, 3.0, 2.0, 1.0)) -> Track:
+    """A drivable line through an open corridor, such as the one built from the
+    edges a camera perceived this cycle. Cheap enough for every planning cycle.
+
+    The corridor's midline is low-passed along its arc length, which is what a
+    pure-pursuit lookahead does implicitly and what shortens a hairpin's radius
+    problem: the midline through a tight corner can be a curve no kart can turn,
+    while the smoothed one is not. The widest smoothing that still keeps the line
+    ``keep`` metres inside both edges is used. A bounded least-squares solve was
+    tried here first and did worse: it left zigzags where a bound bound.
+    """
+    if track.closed:
+        raise ValueError("smooth_local_reference needs an open track")
+    n = len(track.x)
+    if n < 5:
+        return track
+    spacing = float(np.mean(np.diff(track.s)))
+    heading = track.heading_at(track.s)
+    nx, ny = -np.sin(heading), np.cos(heading)
+
+    def low_pass(values, sigma):
+        half = max(int(3 * sigma / spacing), 1)
+        kernel = np.exp(-0.5 * ((np.arange(-half, half + 1) * spacing) / sigma) ** 2)
+        padded = np.concatenate([np.full(half, values[0]), values, np.full(half, values[-1])])
+        return np.convolve(padded, kernel / kernel.sum(), mode="valid")
+
+    for sigma in sigmas:
+        x, y = low_pass(track.x, sigma), low_pass(track.y, sigma)
+        d = (x - track.x) * nx + (y - track.y) * ny  # left of the midline is positive
+        if np.all(track.w_left - d >= keep) and np.all(track.w_right + d >= keep):
+            break
+    return Track(x, y, w_right=track.w_right + d, w_left=track.w_left - d, closed=False, track_id=track.track_id)

@@ -69,6 +69,7 @@ def cmd_simulate(args) -> int:
         policy=args.policy,
         speed_cap=args.speed_cap,
         seed=args.seed,
+        perception=args.perception,
         tuning=load_params(args.config).override(_parse_set(args.set)),
     )
     if args.command == "view":
@@ -140,6 +141,12 @@ def main(argv=None) -> int:
             "--policy",
             default="reference",
             help="reference, stack (sensors, estimator, planner and controllers), camera-demo, or module:factory",
+        )
+        command.add_argument(
+            "--perception",
+            default="map",
+            help="with --policy stack: what the planner drives between. map (follow the track file), "
+            "oracle (true edges), camera-demo, or a module:factory segmentation model read through the camera",
         )
         command.add_argument("--config", help="tuning yaml for the stack (default: config/sim_default.yaml)")
         command.add_argument(
