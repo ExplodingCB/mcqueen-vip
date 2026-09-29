@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-let track, snapshot, path = [], busy = false, aerial;
+let track, snapshot, path = [], busy = false, aerial, reference;
 const keys = new Set();
 async function api(url, body) {
   const response = await fetch(url, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {});
@@ -53,6 +53,11 @@ function update(data) {
   $('throttle').textContent=Math.round(s.throttle*100)+'%';$('brake').textContent=Math.round(s.brake*100)+'%';
   $('lat').textContent=(s.a_lat/9.81).toFixed(2)+' g';$('yaw-rate').textContent=s.yaw_rate.toFixed(2)+' rad/s';
   $('clearance').textContent=r.minimum_body_clearance_m===null?'--':r.minimum_body_clearance_m.toFixed(2)+' m';
+  const est=data.estimate;
+  $('est-error').textContent=est?(est.position_error_m*100).toFixed(1)+' cm':'--';
+  $('est-sigma').textContent=est?(est.position_sigma_m*100).toFixed(1)+' cm':'--';
+  $('gnss').textContent=est?est.gnss:'--';
+  if(r.policy==='stack'&&!reference){reference=[];api('/api/reference').then(d=>{reference=d.line;draw();}).catch(()=>{});}
   $('progress').textContent=Math.max(0,100*r.progress_m/track.length).toFixed(1)+'%';
   $('laps').textContent=r.completed_laps;$('violations').textContent=r.boundary_violations;
   $('wheelbase').textContent=p.wheelbase.toFixed(2)+' m';$('body-width').textContent=(2*p.half_width).toFixed(2)+' m (estimate)';
@@ -92,13 +97,16 @@ function draw() {
     ctx.save();ctx.translate(...a);ctx.rotate(Math.atan2(b[1]-a[1],b[0]-a[0]));
     ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-4,-3);ctx.lineTo(-4,3);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#333';ctx.lineWidth=.7;ctx.stroke();ctx.restore();
   }
+  if(snapshot.report.policy==='stack'&&reference?.length){ctx.setLineDash([5,4]);line(reference,'#00c853',1.2,true);ctx.setLineDash([]);}
   line(path,'#1595ff',2);line([track.left[0],track.right[0]],'#fff',3);
   const s=snapshot.state,p=snapshot.report.vehicle_parameters;ctx.save();ctx.translate(...xy([s.x,s.y]));ctx.rotate(-s.yaw);
   ctx.fillStyle='#e32424';ctx.fillRect(-p.rear_extent*scale,-p.half_width*scale,(p.front_extent+p.rear_extent)*scale,2*p.half_width*scale);
   ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.strokeStyle='#e32424';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.moveTo(8,0);ctx.lineTo(15,0);ctx.stroke();ctx.restore();
+  const est=snapshot.estimate;
+  if(est){ctx.save();ctx.translate(...xy([est.x,est.y]));ctx.rotate(-est.yaw);ctx.strokeStyle='#00b8d4';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-6,-6);ctx.lineTo(6,6);ctx.moveTo(-6,6);ctx.lineTo(6,-6);ctx.stroke();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(16,0);ctx.stroke();ctx.restore();}
   ctx.fillStyle='#fff';ctx.fillRect(7,h-33,20*scale+10,26);ctx.fillStyle='#222';ctx.font='11px system-ui';ctx.fillText('20 m',12,h-16);ctx.fillRect(12,h-11,20*scale,1);ctx.fillText('N ↑',w-33,20);
   const source=track.meta.source?.attribution||'Provisional geometry';
-  $('map-source').textContent=`${source}. ${showAerial?'Yellow: estimated':'Estimated'} track edges.`;
+  $('map-source').textContent=`${source}. ${showAerial?'Yellow: estimated':'Estimated'} track edges.${est?' Red: true kart. Cyan cross: estimator. Green dashed: planner reference.':''}`;
 }
 window.addEventListener('resize',draw);
 const allowed=new Set(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright']);
