@@ -14,6 +14,9 @@ import yaml
 
 from mcq_sim.camera import CameraParams, DemoSegmenter, TrackCamera, checked_mask, mask_iou
 from mcq_sim.dynamics import DynamicKart, DynamicsParams, DynamicState
+from mcq_sim.params import load_params
+from mcq_sim.sensors import STATUS_NAME
+from mcq_sim.stack import DrivingStack, estimate_error_summary
 from mcq_sim.track import Track, wrap_angle
 
 
@@ -53,12 +56,13 @@ class Simulator:
 
     control_dt = 0.05
 
-    def __init__(self, track: Track, config=None, policy="reference", speed_cap=4.0, seed=0):
+    def __init__(self, track: Track, config=None, policy="reference", speed_cap=4.0, seed=0, tuning=None):
         self.track = track
+        self.tuning = tuning or load_params()
         self.vehicle_params, self.camera_params, self.provenance = load_kart(config)
         self.camera = TrackCamera(track, self.camera_params)
         self.policy_name = policy
-        self.segmenter = None if policy in ("reference", "manual") else load_segmenter(policy)
+        self.segmenter = None if policy in ("reference", "manual", "stack") else load_segmenter(policy)
         if not math.isfinite(speed_cap) or not 0 < speed_cap <= 12:
             raise ValueError("speed cap must be in (0, 12] m/s")
         self.speed_cap = speed_cap
@@ -83,6 +87,11 @@ class Simulator:
         self.last_rgb = None
         self.last_truth = None
         self.last_frame_time = None
+        self.stack = None
+        if self.policy_name == "stack":
+            self.stack = DrivingStack(
+                self.track, self.vehicle_params, self.tuning, speed_cap=self.speed_cap, seed=self.seed
+            )
         if self.segmenter is not None and callable(getattr(self.segmenter, "reset", None)):
             self.segmenter.reset(self.seed)
 
@@ -154,9 +163,55 @@ class Simulator:
         target = min(self.speed_cap, math.sqrt(1.5 / max(abs(curve), 0.01)))
         return math.atan(self.vehicle_params.wheelbase * curve), *self._pedals(target)
 
+    def _advance(self, command, scoring=None):
+        """One physics tick under ``command``, with the boundary and progress
+        bookkeeping. ``scoring`` is extra columns measured before the step, so
+        an estimate is compared with the truth at its own time. Returns False
+        when the episode has ended."""
+        s = self.kart.step(*command)
+        points = self.kart.footprint()
+        clearance = float(self.track.distance_to_edge(points[:, 0], points[:, 1]).min())
+        self.min_clearance = min(self.min_clearance, clearance)
+        self.max_speed = max(self.max_speed, s.v)
+        current_s = float(self.track.frenet(s.x, s.y)[0][0])
+        delta = (current_s - self.previous_s + self.track.length / 2) % self.track.length - self.track.length / 2
+        if abs(delta) > max(2, s.v * self.kart.dt * 3):
+            self.reason = "track_projection_discontinuity"
+        else:
+            self.progress += delta
+        self.previous_s = current_s
+        if clearance < 0:
+            self.violations += 1
+            self.reason = "body_outside_track"
+        row = {
+            **asdict(s),
+            "steer_cmd": command[0],
+            "throttle_cmd": command[1],
+            "brake_cmd": command[2],
+            "clearance_m": clearance,
+            "progress_m": self.progress,
+        }
+        row.update(scoring or {})
+        self.log.append(row)
+        return not self.reason
+
+    def _stack_step(self):
+        """The full stack runs its controller every physics tick. A stop it
+        raised ends the episode once the kart has stopped, as the harness does."""
+        self.stack.speed_cap = self.speed_cap
+        for _ in range(round(self.control_dt / self.kart.dt)):
+            self.command = self.stack.tick(self.kart.state)
+            if not self._advance(self.command, self.stack.telemetry(self.kart.state)):
+                return
+            if self.stack.stopping and self.kart.state.v < 0.05:
+                self.reason = f"stack_stop: {self.stack.stop_reason}"
+                return
+
     def step(self, manual=None):
         if self.reason:
             return
+        if self.policy_name == "stack":
+            return self._stack_step()
         try:
             if self.policy_name == "manual":
                 self.command = tuple(manual or (0, 0, 1))
@@ -170,33 +225,25 @@ class Simulator:
         if self.reason:
             return  # terminate the episode; never keep the last valid throttle
         for _ in range(round(self.control_dt / self.kart.dt)):
-            s = self.kart.step(*self.command)
-            points = self.kart.footprint()
-            clearance = float(self.track.distance_to_edge(points[:, 0], points[:, 1]).min())
-            self.min_clearance = min(self.min_clearance, clearance)
-            self.max_speed = max(self.max_speed, s.v)
-            current_s = float(self.track.frenet(s.x, s.y)[0][0])
-            delta = (current_s - self.previous_s + self.track.length / 2) % self.track.length - self.track.length / 2
-            if abs(delta) > max(2, s.v * self.kart.dt * 3):
-                self.reason = "track_projection_discontinuity"
-            else:
-                self.progress += delta
-            self.previous_s = current_s
-            if clearance < 0:
-                self.violations += 1
-                self.reason = "body_outside_track"
-            self.log.append(
-                {
-                    **asdict(s),
-                    "steer_cmd": self.command[0],
-                    "throttle_cmd": self.command[1],
-                    "brake_cmd": self.command[2],
-                    "clearance_m": clearance,
-                    "progress_m": self.progress,
-                }
-            )
-            if self.reason:
+            if not self._advance(self.command):
                 break
+
+    def estimate_snapshot(self):
+        """The stack's belief next to the truth, for the viewer. None unless the
+        full stack is driving and has its first fix."""
+        if self.stack is None or not self.stack.initialized:
+            return None
+        e, t = self.stack.estimate, self.kart.state
+        return {
+            "x": e.x,
+            "y": e.y,
+            "yaw": e.yaw,
+            "v": e.v,
+            "position_error_m": math.hypot(e.x - t.x, e.y - t.y),
+            "position_sigma_m": e.pos_sigma,
+            "gnss": STATUS_NAME[self.stack.gnss_status],
+            "stop_reason": self.stack.stop_reason,
+        }
 
     def frame(self):
         return self.camera.render(self.kart.state)
@@ -226,6 +273,8 @@ class Simulator:
             "timing": "lockstep; measured wall inference time is not injected as latency",
             "vehicle_parameters": asdict(self.vehicle_params),
             "camera_parameters": asdict(self.camera_params),
+            "estimator": estimate_error_summary(self.log) if self.stack is not None else None,
+            "stack_stop_reason": self.stack.stop_reason if self.stack is not None else None,
         }
 
 
