@@ -120,9 +120,9 @@ def run(args):
         wait_for(
             lambda: (
                 all(pub.get_subscription_count() for pub in [*publishers.values(), ticks])
-                and all(
-                    node.count_publishers(sub.topic_name) for sub in [*subscriptions.values(), receipt_subscription]
-                )
+                # Graph discovery can precede the reader/writer match. Starting
+                # then can lose the first output on these volatile subscriptions.
+                and all(sub.get_publisher_count() for sub in [*subscriptions.values(), receipt_subscription])
             ),
             "DDS discovery",
             30.0,
