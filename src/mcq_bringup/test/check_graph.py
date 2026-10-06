@@ -31,6 +31,7 @@ class Checker(Node):
         self.startup_stop_requests = 0
         self.geofence_violations = 0
         self.startup_stale_poses = 0
+        self.pending_stale_geofences = []
         self.vehicle_mode = None
         self.auto_seen = False
         self.moving_since = None
@@ -58,6 +59,7 @@ class Checker(Node):
         if self.moving_since is None and msg.v > 0.5:
             self.moving_since = time.monotonic() - self.t0
             self.get_logger().info(f"kart moving after {self.moving_since:.2f} s")
+            self.resolve_pending_geofences()
         if self.last_s is not None:
             ds = msg.s - self.last_s
             if ds < -50.0:  # wrapped past the start line
@@ -78,9 +80,27 @@ class Checker(Node):
     def on_vehicle(self, msg):
         self.vehicle_mode = msg.mode
         self.auto_seen = self.auto_seen or msg.mode == VehicleState.MODE_AUTO
+        self.resolve_pending_geofences()
+
+    def resolve_pending_geofences(self):
+        pending, self.pending_stale_geofences = self.pending_stale_geofences, []
+        for msg in pending:
+            self.on_geofence(msg)
 
     def on_geofence(self, msg):
         if msg.violation:
+            # Independent DDS topics can arrive in either order. Retain this
+            # verdict until the mode is known, or movement makes it a failure.
+            # Pending verdicts prevent PASS and still fail on startup timeout.
+            if (
+                msg.reason == GeofenceState.REASON_POSE_STALE
+                and self.vehicle_mode is None
+                and not self.auto_seen
+                and self.moving_since is None
+            ):
+                self.pending_stale_geofences.append(msg)
+                self.get_logger().warning("stale-pose verdict awaiting the initial vehicle mode")
+                return
             # Stale localization during stationary RC startup is an unavailable
             # AUTO input, not a driving intervention. Other reasons always fail;
             # after the first AUTO sample every violation fails, even at zero speed.
@@ -116,7 +136,8 @@ class Checker(Node):
         return (
             f"progress {self.progress:.1f} m, v_max {self.v_max:.2f} m/s, commands {self.commands}, "
             f"stop requests {self.stop_requests} (startup {self.startup_stop_requests}), "
-            f"geofence violations {self.geofence_violations} (RC startup stale poses {self.startup_stale_poses})"
+            f"geofence violations {self.geofence_violations} (RC startup stale poses {self.startup_stale_poses}, "
+            f"awaiting mode {len(self.pending_stale_geofences)})"
         )
 
     def verdict(self):
@@ -127,7 +148,7 @@ class Checker(Node):
         if self.stop_requests or self.geofence_violations:
             self.get_logger().error("FAIL: " + self.status())
             return 1
-        if self.progress >= self.args.distance and self.v_max >= self.args.speed:
+        if self.progress >= self.args.distance and self.v_max >= self.args.speed and not self.pending_stale_geofences:
             self.get_logger().info("PASS: " + self.status())
             return 0
         if elapsed > self.args.timeout:
