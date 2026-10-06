@@ -1,8 +1,11 @@
 """Separate best-effort observer process: cache inputs, publish a 10 Hz summary."""
 
 import math
+from collections import deque
 
 import rclpy
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Path
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 
@@ -53,6 +56,19 @@ class TelemetryNode(Node):
         }
         self.latest = dict.fromkeys(("ego", "trajectory", "gateway", "planner", "command"))
         self.pub = self.create_publisher(Telemetry, "telemetry/summary", qos)
+        self.pose_pub = self.create_publisher(PoseStamped, "telemetry/pose", qos)
+        self.trail_pub = self.create_publisher(Path, "telemetry/trail", qos)
+        self.track_pub = self.create_publisher(Path, "telemetry/track", qos)
+        self.trail = deque(maxlen=max(1, int(rate * 30)))
+        self.track_path = Path()
+        self.track_path.header.frame_id = "map"
+        for x, y in self.laps.centerline + self.laps.centerline[:1]:
+            point = PoseStamped()
+            point.header.frame_id = "map"
+            point.pose.position.x = x
+            point.pose.position.y = y
+            point.pose.orientation.w = 1.0
+            self.track_path.poses.append(point)
         for key, topic, message in (
             ("ego", "ego_state", EgoState),
             ("trajectory", "trajectory", Trajectory),
@@ -62,6 +78,7 @@ class TelemetryNode(Node):
         ):
             self.create_subscription(message, topic, lambda msg, key=key: self.receive(key, msg), qos)
         self.create_timer(1.0 / rate, self.publish)
+        self.create_timer(1.0, self.publish_paths)
 
     def receive(self, key, msg):
         self.latest[key] = msg
@@ -122,6 +139,30 @@ class TelemetryNode(Node):
         msg.current_lap_time = self.laps.elapsed(now)
         msg.last_lap_time, msg.best_lap_time = self.laps.last_lap, self.laps.best_lap
         self.pub.publish(msg)
+        if msg.ego_valid and ego.header.frame_id == "map" and all(
+            math.isfinite(value)
+            for value in (ego.pose.position.x, ego.pose.position.y, ego.pose.position.z)
+        ):
+            pose = PoseStamped()
+            pose.header = ego.header
+            pose.pose = ego.pose
+            self.pose_pub.publish(pose)
+            if not self.trail or pose.header.stamp != self.trail[-1].header.stamp:
+                self.trail.append(pose)
+        else:
+            self.trail.clear()
+
+    def publish_paths(self):
+        stamp = self.get_clock().now().to_msg()
+        self.track_path.header.stamp = stamp
+        for pose in self.track_path.poses:
+            pose.header.stamp = stamp
+        self.track_pub.publish(self.track_path)
+        trail = Path()
+        trail.header.frame_id = "map"
+        trail.header.stamp = stamp
+        trail.poses = list(self.trail)
+        self.trail_pub.publish(trail)
 
 
 def main(args=None):

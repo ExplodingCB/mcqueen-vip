@@ -1,7 +1,7 @@
 # mcq_telemetry
 
 H1 pit telemetry: a 10 Hz summary, finish-line lap timing, a Foxglove WebSocket
-bridge, and three repository-owned layouts. Develop against the simulator before
+bridge, and four repository-owned layouts. Develop against the simulator before
 using this on the kart. The AKS RCS black box interface is Phase 5 and is not
 implemented here.
 
@@ -58,14 +58,26 @@ The existing `docker/x86/Dockerfile` includes the bridge.
 | Layout | Purpose |
 | --- | --- |
 | `layouts/pit.json` | Gateway and GNSS indicators; speed/target/cap; lateral deviation; faults; current, last and best lap; completed laps and input freshness |
+| `layouts/live-tracking.json` | 3D track centerline, live kart pose and recent trail; mode, GNSS and active faults; speed, deviation, laps and input freshness |
 | `layouts/localization-debug.json` | Map coordinates, Frenet progress/deviation, pose covariance, GNSS state and state age |
 | `layouts/control-debug.json` | Speed error, target and cap; steering command/feedback; pedals; stops, gateway faults and input ages; raw trajectory |
 
-Load all three before AUTO if you will use all three. The layouts use SI units
-and built-in panels, with no custom extension or user script. JSON panel
-configuration was generated against Foxglove SDK 0.27.0's layout models. Actual
+Load every layout you plan to use before AUTO. The layouts use SI units
+and built-in panels, with no custom extension or user script. The original
+panel configurations were generated against Foxglove SDK 0.27.0's layout
+models; the live-tracking 3D panel follows the current
+[3D panel documentation](https://docs.foxglove.dev/docs/visualization/panels/3d). Actual
 import/rendering and the second-machine connection remain a manual acceptance
 check; schema checks do not substitute for that check.
+
+The live-tracking view uses the local `map` frame in the 3D panel. The telemetry
+node publishes `/telemetry/pose` (`geometry_msgs/PoseStamped`) at up to 10 Hz
+when the map-frame ego pose is fresh, plus `/telemetry/track` and
+`/telemetry/trail` (`nav_msgs/Path`) at 1 Hz. The track path is the closed
+centerline from the active `track.csv`; the trail holds at most 30 seconds of
+recent valid poses. The 3D view is not a geographic map. When ego data becomes
+invalid the pose stops updating and the trail clears; use the `ego_valid` and
+Foxglove connection indicators to detect a stale displayed pose.
 
 To compose this package into another bringup, start its launch before AUTO:
 

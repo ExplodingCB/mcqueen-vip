@@ -1,6 +1,11 @@
-from glob import glob
+from pathlib import Path
 
 from setuptools import find_packages, setup
+
+
+def asset_files(folder):
+    return [str(path) for path in sorted(Path(folder).iterdir()) if path.is_file()]
+
 
 setup(
     name="mcq_telemetry",
@@ -9,7 +14,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/mcq_telemetry"]),
         ("share/mcq_telemetry", ["package.xml", "README.md"]),
-        *[("share/mcq_telemetry/" + folder, glob(folder + "/*")) for folder in ("config", "launch", "layouts")],
+        *[("share/mcq_telemetry/" + folder, asset_files(folder)) for folder in ("config", "launch", "layouts")],
     ],
     install_requires=["setuptools", "pyyaml"],
     tests_require=["pytest"],

@@ -20,7 +20,7 @@ def test_layout_topics_and_fields_are_available_through_bridge():
         "trajectory": "Trajectory",
         "gateway_status": "GatewayStatus",
     }
-    for name in ("pit", "localization-debug", "control-debug"):
+    for name in ("pit", "localization-debug", "control-debug", "live-tracking"):
         layout = json.loads((PACKAGE / "layouts" / (name + ".json")).read_text())
 
         def check_tree(tree, configs=layout["configById"]):
@@ -31,10 +31,15 @@ def test_layout_topics_and_fields_are_available_through_bridge():
                 check_tree(tree["second"])
 
         check_tree(layout["layout"])
+        if name == "live-tracking":
+            panel = next(value for key, value in layout["configById"].items() if key.startswith("3D!"))
+            assert panel["followTf"] == "map"
+            assert set(panel["topics"]) == {"/telemetry/track", "/telemetry/trail", "/telemetry/pose"}
+            assert all(topic["visible"] for topic in panel["topics"].values())
         for topic, field in re.findall(r'"(/[^".]+)(?:\.([^".\[]+))?[^\"]*"', json.dumps(layout["configById"])):
             assert any(re.fullmatch(pattern, topic) for pattern in config["topic_whitelist"])
-            definition = (PACKAGE.parent / "mcq_msgs/msg" / (types[topic[1:]] + ".msg")).read_text()
             if field:
+                definition = (PACKAGE.parent / "mcq_msgs/msg" / (types[topic[1:]] + ".msg")).read_text()
                 assert re.search(r"^\S+\s+" + re.escape(field) + r"\b", definition, re.MULTILINE)
 
 

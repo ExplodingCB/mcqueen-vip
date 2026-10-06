@@ -41,11 +41,18 @@ def test_summary_and_qos_with_real_ros_messages():
         assert node.pub.qos_profile.reliability == ReliabilityPolicy.BEST_EFFORT
         capture = Capture()
         node.pub = capture
+        pose_capture, track_capture, trail_capture = Capture(), Capture(), Capture()
+        node.pose_pub, node.track_pub, node.trail_pub = pose_capture, track_capture, trail_capture
         node.publish()
         assert not capture.message.ego_valid
         assert capture.message.gateway_mode == "UNKNOWN"
         assert math.isnan(capture.message.speed)
         assert math.isnan(capture.message.speed_cap)
+        assert not hasattr(pose_capture, "message")
+        node.publish_paths()
+        assert track_capture.message.header.frame_id == "map"
+        assert len(track_capture.message.poses) == len(node.laps.centerline) + 1
+        assert not trail_capture.message.poses
         stamp = node.get_clock().now().to_msg()
         messages = {
             "gateway": GatewayStatus(mode=2, fault_flags=4, fault_latched=5),
@@ -56,6 +63,7 @@ def test_summary_and_qos_with_real_ros_messages():
         }
         messages["ego"].pose.position.x = -30.0
         messages["ego"].pose.position.y = -15.0
+        messages["ego"].pose.orientation.w = 1.0
         for key, message in messages.items():
             message.header.stamp = stamp
             message.header.frame_id = "map"
@@ -71,12 +79,18 @@ def test_summary_and_qos_with_real_ros_messages():
         assert "HEARTBEAT_TIMEOUT" in summary.latched_faults
         assert summary.urgent_stop
         assert summary.lap_active
+        assert pose_capture.message.header.frame_id == "map"
+        assert pose_capture.message.pose.position.x == -30.0
+        node.publish_paths()
+        assert len(trail_capture.message.poses) == 1
         for message in messages.values():
             message.header.stamp.sec -= 10
         node.publish()
         assert not capture.message.ego_valid and not capture.message.lap_active
         assert capture.message.gateway_mode == "UNKNOWN"
         assert math.isnan(capture.message.target_speed)
+        node.publish_paths()
+        assert not trail_capture.message.poses
     finally:
         node.destroy_node()
         rclpy.shutdown()

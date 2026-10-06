@@ -88,7 +88,9 @@ class LapTimer:
         if direction is None:
             raise ValueError("finish segment does not cross the centerline")
         length = sum(math.dist(p, q) for p, q in segments)
-        return cls(a, b, direction, min_lap_distance=length * 0.5, **kwargs), str(meta["track_id"])
+        timer = cls(a, b, direction, min_lap_distance=length * 0.5, **kwargs)
+        timer.centerline = points
+        return timer, str(meta["track_id"])
 
     def side(self, point):
         return self.sign * cross(self.line, subtract(point, self.a)) / self.length

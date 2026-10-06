@@ -3,7 +3,7 @@ foxglove_bridge:
     address: 0.0.0.0
     port: 8765
     topic_whitelist:
-      - '^/(telemetry/summary|ego_state|trajectory|gateway_status|planner_status|vehicle_command|vehicle_state|geofence_state)$'
+      - '^/(telemetry/(summary|pose|trail|track)|ego_state|trajectory|gateway_status|planner_status|vehicle_command|vehicle_state|geofence_state)$'
     # Do not allow automatic QoS selection to introduce a reliable reader.
     best_effort_qos_topic_whitelist: ['.*']
     min_qos_depth: 1
