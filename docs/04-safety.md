@@ -111,7 +111,7 @@ Every item is run on the bench rig before the first autonomous drive and again a
 12. Flip to `AUTO` with a stale heartbeat (must be refused).
 13. Corrupt the CRC of every tenth frame.
 14. Publish a trajectory that leaves the boundaries; a trajectory older than 200 ms; a trajectory with speed above the cap.
-15. Move the surveyed track file by 2 m and drive `FOLLOW` mode in simulation (geofence must fire).
+15. Move the surveyed track file by 2 m and drive `FOLLOW` mode in simulation (geofence must fire). The graph regression uses an explicit 2 m wide synthetic oval, starts driving on its unshifted map, then reloads a copy shifted 2 m through `mcq/load_track`. The normal 5 m wide oval plus 0.5 m inflation still contains a centered kart after a 2 m shift, so that geometry cannot by itself establish this violation. `geofence_graph.sh shift` checks the changed model, outside-polygon verdict, urgent-stop command, gateway stop and standstill. Its `covariance` scenario keeps the pose inside and raises the principal planar variance above the gate.
 
 ## 8. Operating rules
 
