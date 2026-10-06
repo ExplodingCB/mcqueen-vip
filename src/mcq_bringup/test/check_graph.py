@@ -6,14 +6,16 @@ driven a set distance at speed with no stop requested, exit 1 on timeout.
 """
 
 import argparse
+import json
 import sys
 import time
+from pathlib import Path
 
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
-from mcq_msgs.msg import EgoState, GeofenceState, VehicleCommand, VehicleState
+from mcq_msgs.msg import EgoState, GeofenceState, Trajectory, VehicleCommand, VehicleState
 
 
 class Checker(Node):
@@ -34,15 +36,22 @@ class Checker(Node):
         self.moving_since = None
         self.first_ego = None
         self.track_length = None
+        self.rate_samples = {key: [] for key in ("ego_state", "vehicle_command", "trajectory")}
         qos = qos_profile_sensor_data
         self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
         self.create_subscription(VehicleCommand, "vehicle_command", self.on_cmd, qos)
         self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, qos)
         self.create_subscription(VehicleState, "vehicle_state", self.on_vehicle, qos)
+        self.create_subscription(Trajectory, "trajectory", lambda msg: self.measure("trajectory"), qos)
         self.t0 = time.monotonic()
         self.last_report = self.t0
 
+    def measure(self, topic):
+        if self.moving_since is not None:
+            self.rate_samples[topic].append(time.monotonic())
+
     def on_ego(self, msg):
+        self.measure("ego_state")
         if self.first_ego is None:
             self.first_ego = time.monotonic() - self.t0
             self.get_logger().info(f"first ego state after {self.first_ego:.2f} s")
@@ -58,6 +67,7 @@ class Checker(Node):
         self.v_max = max(self.v_max, msg.v)
 
     def on_cmd(self, msg):
+        self.measure("vehicle_command")
         self.commands += 1
         if msg.request_urgent_stop:
             if not self.auto_seen and self.moving_since is None:
@@ -89,6 +99,19 @@ class Checker(Node):
                 f"mode={self.vehicle_mode}, startup_stale={startup_stale}"
             )
 
+    def report(self, code):
+        rates = {}
+        for topic, samples in self.rate_samples.items():
+            span = samples[-1] - samples[0] if len(samples) > 1 else 0
+            rates[topic] = (len(samples) - 1) / span if span > 0 else 0.0
+        return {
+            "exit_code": code,
+            "rates": rates,
+            "urgent_stops": self.stop_requests,
+            "progress_m": self.progress,
+            "moving_seconds": time.monotonic() - self.t0 - (self.moving_since or 0),
+        }
+
     def status(self):
         return (
             f"progress {self.progress:.1f} m, v_max {self.v_max:.2f} m/s, commands {self.commands}, "
@@ -118,6 +141,7 @@ def main():
     parser.add_argument("--distance", type=float, default=120.0, help="metres to cover")
     parser.add_argument("--speed", type=float, default=3.0, help="peak speed to reach, m/s")
     parser.add_argument("--timeout", type=float, default=90.0)
+    parser.add_argument("--report", type=Path, help="write full-driving-window rate and stop metrics as JSON")
     args, ros_args = parser.parse_known_args()
     rclpy.init(args=ros_args)
     node = Checker(args)
@@ -125,6 +149,8 @@ def main():
     while code is None and rclpy.ok():
         rclpy.spin_once(node, timeout_sec=0.2)
         code = node.verdict()
+    if args.report:
+        args.report.write_text(json.dumps(node.report(code), indent=2) + "\n")
     node.destroy_node()
     rclpy.try_shutdown()
     sys.exit(code if code is not None else 1)
