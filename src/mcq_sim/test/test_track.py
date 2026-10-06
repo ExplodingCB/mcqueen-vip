@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -37,6 +39,13 @@ def test_cartesian_wraps_arc_length(oval):
         np.testing.assert_allclose(
             oval.cartesian(arc_length, offset), oval.cartesian(reference_s, offset), rtol=0.0, atol=1e-12
         )
+
+
+def test_checked_in_oval_length():
+    track = Track.load(Path(__file__).resolve().parents[3] / "tracks" / "synthetic_oval")
+    # README: two 60 m straights and two semicircles of radius 15 m.
+    # Allow 0.1 m for the sampled polyline's chord approximation.
+    assert track.length == pytest.approx(2 * 60 + 2 * np.pi * 15, abs=0.1)
 
 
 def test_oval_geometry(oval):

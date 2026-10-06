@@ -9,9 +9,11 @@ FROM ros:jazzy-ros-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential cmake clang-format git python3-pip python3-venv \
+    python3-colcon-common-extensions \
     python3-numpy python3-scipy python3-yaml python3-pytest \
     ros-jazzy-rosbag2-storage-mcap ros-jazzy-foxglove-bridge \
-    ros-jazzy-geometry-msgs ros-jazzy-std-msgs \
+    ros-jazzy-geometry-msgs ros-jazzy-nav-msgs ros-jazzy-std-msgs ros-jazzy-sensor-msgs \
+    ros-jazzy-rosidl-default-generators ros-jazzy-rclcpp-components \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages --no-cache-dir cantools ruff pre-commit
