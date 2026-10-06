@@ -1,0 +1,11 @@
+.git
+build
+install
+log
+logs
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+training/data/raw
+training/data/frames
