@@ -4,7 +4,7 @@
   <name>mcq_vehicle</name>
   <version>0.1.0</version>
   <description>CAN interface to the safety gateway: VehicleState and GatewayStatus in, VehicleCommand out. dbc/mcqueen.dbc is the frame definition.</description>
-  <maintainer email="culbertsonprime@gmail.com">Chase Culbertson</maintainer>
+  <maintainer email="explodingcommandblock@gmail.com">ExplodingCB</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kart simulator</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<main>
+<section id="inputs">
+<h2>Inputs</h2>
+<label>Driver <select id="mode"><option value="reference">Reference</option><option value="manual">Manual</option><option value="camera-demo">Camera demo</option></select></label>
+<p><button id="play">Run</button> <button id="step">Step</button> <button id="reset">Reset</button></p>
+<label>Speed cap <output id="cap">4 m/s</output><input id="speed" type="range" min="1" max="8" step="0.5" value="4"></label>
+<fieldset id="manual" disabled><legend>Manual controls</legend>
+<label>Steering <output id="steer-value">0 deg</output><input id="steer" type="range" min="-0.45" max="0.45" step="0.01" value="0"></label>
+<label>Throttle <output id="gas-value">0%</output><input id="gas" type="range" min="0" max="1" step="0.01" value="0"></label>
+<label>Brake <output id="brake-value">0%</output><input id="pedal" type="range" min="0" max="1" step="0.01" value="0"></label>
+<small>W/A/S/D or arrow keys</small>
+</fieldset>
+<label>Grip coefficient <output id="grip-value">0.9</output><input id="grip" type="range" min="0.2" max="1.4" step="0.05" value="0.9"></label>
+<label>Mass <output id="mass-value">170 kg</output><input id="mass" type="range" min="100" max="250" step="5" value="170"></label>
+<small>Grip and mass changes reset the run.</small>
+<p id="notice" role="status"></p>
+</section>
+<section id="map-panel"><div class="map-header"><h2>Map</h2><select id="view" aria-label="View"><option value="map">Track</option><option value="camera">Camera</option><option value="mask">Pavement mask</option><option value="prediction">Prediction</option></select><label id="aerial-control"><input id="aerial" type="checkbox" checked> Aerial</label><label id="points-control" hidden><input id="points" type="checkbox" checked> Points</label></div><canvas id="map" aria-label="Track and kart position"></canvas><img id="camera" alt="Camera frame" hidden><small id="map-source"></small></section>
+<section id="state"><h2>Kart state</h2><table><tbody>
+<tr><th>Status</th><td id="run-state">Paused</td></tr>
+<tr><th>Time</th><td id="time">0 s</td></tr>
+<tr><th>Speed</th><td id="velocity">0 m/s</td></tr>
+<tr><th>Steering</th><td id="angle">0 deg</td></tr>
+<tr><th>Throttle</th><td id="throttle">0%</td></tr>
+<tr><th>Brake</th><td id="brake">0%</td></tr>
+<tr><th>Lateral accel.</th><td id="lat">0 g</td></tr>
+<tr><th>Yaw rate</th><td id="yaw-rate">0 rad/s</td></tr>
+<tr><th>Min. clearance</th><td id="clearance">--</td></tr>
+<tr><th>Progress</th><td id="progress">0%</td></tr>
+<tr><th>Laps</th><td id="laps">0</td></tr>
+<tr><th>Violations</th><td id="violations">0</td></tr>
+<tr><th>Wheelbase</th><td id="wheelbase">1.4 m</td></tr>
+<tr><th>Body width</th><td id="body-width">1.6 m (estimate)</td></tr>
+</tbody></table><p><small>Physics uncalibrated. <a href="/api/log.csv" download="kart-log.csv">CSV</a> <a href="/api/report" download="kart-report.json">Report</a></small></p></section>
+</main><script src="/app.js"></script></body></html>

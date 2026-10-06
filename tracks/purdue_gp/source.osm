@@ -1,0 +1,125 @@
+<?xml version='1.0' encoding='utf-8'?>
+<osm version="0.6" generator="openstreetmap-cgimap 2.1.0 (3498750 spike-06.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
+  <bounds minlat="40.4366000" minlon="-86.9463000" maxlat="40.4389000" maxlon="-86.9431000" />
+  <node id="2869842491" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383713" lon="-86.9438386" />
+  <node id="2869842492" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383360" lon="-86.9447210" />
+  <node id="2869842493" visible="true" version="2" changeset="86059486" timestamp="2020-06-01T18:55:33Z" user="Sangueffusor" uid="6793422" lat="40.4379150" lon="-86.9450409" />
+  <node id="2869842494" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378093" lon="-86.9450299" />
+  <node id="2869842495" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4373724" lon="-86.9440729" />
+  <node id="2869842496" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4374411" lon="-86.9437751" />
+  <node id="6149750706" visible="true" version="3" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4374189" lon="-86.9438509" />
+  <node id="7578569022" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382957" lon="-86.9437573" />
+  <node id="7578569023" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383375" lon="-86.9439524" />
+  <node id="7578569024" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383097" lon="-86.9439658" />
+  <node id="7578569025" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4373772" lon="-86.9441033" />
+  <node id="7578569026" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378537" lon="-86.9450633" />
+  <node id="7578569027" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4380360" lon="-86.9446854" />
+  <node id="7578569028" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4381052" lon="-86.9446641" />
+  <node id="7578569029" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382665" lon="-86.9447405" />
+  <node id="7578569030" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383815" lon="-86.9446256" />
+  <node id="7578569031" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383815" lon="-86.9444924" />
+  <node id="7578569032" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383190" lon="-86.9443726" />
+  <node id="7578569033" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382582" lon="-86.9443598" />
+  <node id="7578569034" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4380550" lon="-86.9444199" />
+  <node id="7578569035" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379214" lon="-86.9443816" />
+  <node id="7578569036" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378716" lon="-86.9443194" />
+  <node id="7578569037" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378317" lon="-86.9441562" />
+  <node id="7578569038" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378775" lon="-86.9440414" />
+  <node id="7578569039" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379001" lon="-86.9440278" />
+  <node id="7578569040" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379647" lon="-86.9440428" />
+  <node id="7578569041" visible="true" version="1" changeset="86059486" timestamp="2020-06-01T18:55:33Z" user="Sangueffusor" uid="6793422" lat="40.4380552" lon="-86.9441356" />
+  <node id="7578569042" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4381089" lon="-86.9441189" />
+  <node id="7578569043" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4381844" lon="-86.9439915" />
+  <node id="7578569044" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382275" lon="-86.9439642" />
+  <node id="7578569045" visible="true" version="1" changeset="86059486" timestamp="2020-06-01T18:55:33Z" user="Sangueffusor" uid="6793422" lat="40.4376822" lon="-86.9437475" />
+  <node id="7578569050" visible="true" version="2" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379828" lon="-86.9448501" />
+  <node id="9826614227" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4373750" lon="-86.9440412" />
+  <node id="9826614228" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4374537" lon="-86.9437545" />
+  <node id="9826614229" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4374720" lon="-86.9437434" />
+  <node id="9826614233" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4380774" lon="-86.9446552" />
+  <node id="9826614234" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379403" lon="-86.9449946" />
+  <node id="9826614235" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378859" lon="-86.9450623" />
+  <node id="9826614236" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378239" lon="-86.9450487" />
+  <node id="9826614237" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4380547" lon="-86.9446627" />
+  <node id="9826614238" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382962" lon="-86.9447435" />
+  <node id="9826614239" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383644" lon="-86.9446812" />
+  <node id="9826614240" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383859" lon="-86.9445550" />
+  <node id="9826614241" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383678" lon="-86.9444388" />
+  <node id="9826614242" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383455" lon="-86.9443940" />
+  <node id="9826614243" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382863" lon="-86.9443612" />
+  <node id="9826614244" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379881" lon="-86.9444138" />
+  <node id="9826614245" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378382" lon="-86.9442339" />
+  <node id="9826614246" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4378474" lon="-86.9440944" />
+  <node id="9826614247" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4379315" lon="-86.9440276" />
+  <node id="9826614248" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4380837" lon="-86.9441368" />
+  <node id="9826614249" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382640" lon="-86.9439641" />
+  <node id="9826614250" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383578" lon="-86.9439228" />
+  <node id="9826614251" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383712" lon="-86.9438812" />
+  <node id="9826614252" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383520" lon="-86.9437914" />
+  <node id="9826614253" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4383241" lon="-86.9437678" />
+  <node id="9826614254" visible="true" version="1" changeset="122526911" timestamp="2022-06-17T23:14:16Z" user="Clarke22" uid="703694" lat="40.4382052" lon="-86.9439724" />
+  <way id="283069992" visible="true" version="4" changeset="129602612" timestamp="2022-12-01T12:45:09Z" user="Weirdo Waffle" uid="10299813">
+    <nd ref="2869842491" />
+    <nd ref="9826614252" />
+    <nd ref="9826614253" />
+    <nd ref="7578569022" />
+    <nd ref="7578569045" />
+    <nd ref="9826614229" />
+    <nd ref="9826614228" />
+    <nd ref="2869842496" />
+    <nd ref="6149750706" />
+    <nd ref="9826614227" />
+    <nd ref="2869842495" />
+    <nd ref="7578569025" />
+    <nd ref="2869842494" />
+    <nd ref="9826614236" />
+    <nd ref="7578569026" />
+    <nd ref="9826614235" />
+    <nd ref="2869842493" />
+    <nd ref="9826614234" />
+    <nd ref="7578569050" />
+    <nd ref="7578569027" />
+    <nd ref="9826614237" />
+    <nd ref="9826614233" />
+    <nd ref="7578569028" />
+    <nd ref="7578569029" />
+    <nd ref="9826614238" />
+    <nd ref="2869842492" />
+    <nd ref="9826614239" />
+    <nd ref="7578569030" />
+    <nd ref="9826614240" />
+    <nd ref="7578569031" />
+    <nd ref="9826614241" />
+    <nd ref="9826614242" />
+    <nd ref="7578569032" />
+    <nd ref="9826614243" />
+    <nd ref="7578569033" />
+    <nd ref="7578569034" />
+    <nd ref="9826614244" />
+    <nd ref="7578569035" />
+    <nd ref="7578569036" />
+    <nd ref="9826614245" />
+    <nd ref="7578569037" />
+    <nd ref="9826614246" />
+    <nd ref="7578569038" />
+    <nd ref="7578569039" />
+    <nd ref="9826614247" />
+    <nd ref="7578569040" />
+    <nd ref="7578569041" />
+    <nd ref="9826614248" />
+    <nd ref="7578569042" />
+    <nd ref="7578569043" />
+    <nd ref="9826614254" />
+    <nd ref="7578569044" />
+    <nd ref="9826614249" />
+    <nd ref="7578569024" />
+    <nd ref="7578569023" />
+    <nd ref="9826614250" />
+    <nd ref="9826614251" />
+    <nd ref="2869842491" />
+    <tag k="highway" v="raceway" />
+    <tag k="name" v="Purdue Grand Prix Track" />
+    <tag k="sport" v="motor" />
+    <tag k="surface" v="asphalt" />
+  </way>
+</osm>

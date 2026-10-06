@@ -1,0 +1,40 @@
+# All values are SI. See provenance below before interpreting physical accuracy.
+dynamics:
+  wheelbase: 1.4
+  cg_from_rear: 0.6
+  mass: 170.0
+  yaw_inertia: 45.0
+  cg_height: 0.28
+  cornering_front: 9000.0
+  cornering_rear: 10000.0
+  friction: 0.9
+  steer_max: 0.45
+  steer_rate_max: 3.14
+  steer_tau: 0.08
+  command_delay: 0.04
+  throttle_tau: 0.12
+  brake_tau: 0.08
+  accel_max: 3.0
+  v_max: 12.0
+  brake_decel_max: 6.0
+  rolling_decel: 0.3
+  drag: 0.004
+  half_width: 0.8
+  front_extent: 1.65
+  rear_extent: 0.35
+camera:
+  width: 480
+  height: 270
+  horizontal_fov_deg: 100.0
+  height_m: 0.7
+  pitch_down_deg: 8.0
+  forward_m: 0.8
+  far_m: 90.0
+provenance:
+  wheelbase: User reported front-to-rear contact-patch distance of 1400 mm on 2026-09-22.
+  rear_track_width_max_m: 1.397
+  rear_track_width: User reported at most 55 inches; measurement convention not confirmed.
+  overall_width: Assumed 1.6 m envelope, not inferred from the rear track width.
+  remaining_dynamics: Engineering placeholders. No kart telemetry calibration yet.
+  camera: Placeholder intrinsics and mounting. No measured camera calibration yet.
+  accuracy_validated: false

@@ -1,0 +1,17 @@
+body { margin: 16px; font: 14px sans-serif; }
+main { display: grid; grid-template-columns: 210px minmax(0, 1fr) 220px; gap: 20px; }
+h2 { margin: 0 0 12px; font-size: 16px; }
+label { display: block; margin: 12px 0; }
+output { float: right; }
+input[type=range] { display: block; width: 100%; }
+table { width: 100%; }
+th { text-align: left; font-weight: normal; }
+td { text-align: right; font-variant-numeric: tabular-nums; }
+.map-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.map-header h2, .map-header label { margin: 0; }
+#map { display: block; width: 100%; height: calc(100vh - 90px); min-height: 400px; }
+#camera { width: 100%; }
+#notice { overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+@media (max-width: 850px) { main { grid-template-columns: 190px minmax(0, 1fr); } #state { grid-column: 1 / -1; max-width: 300px; } }
+@media (max-width: 550px) { main { display: block; } section { margin-bottom: 24px; } #map { height: 450px; } }

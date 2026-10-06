@@ -9,7 +9,8 @@ line, the id and the survey date. Generated racelines go next to them as
 | Directory | Source | Notes |
 | --- | --- | --- |
 | `synthetic_oval` | `python -m mcq_sim make-track` | 60 m straights, 15 m radius, 5 m wide, 214 m. Phase 0 test track. |
+| `purdue_gp` | Indiana orthophoto trace and user KML anchors | Image-derived geometry and widths, no measured elevation. See its README. |
 
-The Purdue Grand Prix track directory is created by `tools/survey` from an RTK
-log of the kart driving both edges (Phase 1). No real coordinates appear in
-source; they live here.
+Replace the provisional Purdue geometry using `tools/survey` and an RTK log of
+both pavement edges. Keep the measured track in a separate directory until its
+frame, direction and boundary checks pass. Coordinates live in `tracks/`.
