@@ -1,7 +1,16 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from mcq_sim.track import Raceline, Track, base_to_map
+
+
+def test_checked_in_oval_length():
+    track = Track.load(Path(__file__).resolve().parents[3] / "tracks" / "synthetic_oval")
+    # README: two 60 m straights and two semicircles of radius 15 m.
+    # Allow 0.1 m for the sampled polyline's chord approximation.
+    assert track.length == pytest.approx(2 * 60 + 2 * np.pi * 15, abs=0.1)
 
 
 def test_oval_geometry(oval):
