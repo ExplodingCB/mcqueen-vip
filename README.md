@@ -62,7 +62,7 @@ mcqueen-vip/
     mcq_control/         * lateral and longitudinal controllers; core/ is a pure C library
     mcq_perception/        camera and LiDAR boundary extraction, kart detection (TensorRT)
     mcq_sim/             * kart model, Frenet planner prototype, closed-loop harness (Python)
-    mcq_telemetry/         pit-side dashboard bridge, RCS black box interface
+    mcq_telemetry/       * pit-side summary, lap timer and Foxglove layouts (RCS deferred)
   firmware/
     gateway/             * safety gateway core: state machine, heartbeat, limits, codec, host tests, SocketCAN host build
   tools/
@@ -76,6 +76,36 @@ mcqueen-vip/
 ```
 
 ## Build and test
+
+### Start the complete simulation on Ubuntu 24.04
+
+With Docker installed and the daemon available, run from the repository root:
+
+```bash
+./scripts/start_sim.sh
+```
+
+The script builds the Jazzy development image and ROS workspace, then launches
+the simulator, planner, controller, pit telemetry, and Foxglove bridge. Connect
+Foxglove to `ws://localhost:8765` and load the layouts in
+`src/mcq_telemetry/layouts/` before the simulated AUTO handover (60 seconds by
+default). Press Ctrl-C to stop. The simulator emulates the gateway, so this run
+does not require kart hardware or a `vcan0` interface.
+
+```bash
+./scripts/start_sim.sh --check                         # build, drive 120 m, exit PASS/FAIL
+./scripts/start_sim.sh --record                        # save an MCAP bag in logs/
+./scripts/start_sim.sh --mode BOUNDARY --speed-cap 4   # alternate planner mode
+./scripts/start_sim.sh --track tracks/synthetic_oval   # use a specific track
+./scripts/start_sim.sh --native                        # use installed Jazzy and colcon
+```
+
+Use `--no-build` after a successful workspace build to restart faster, or
+`--handover-delay 120` when more time is needed to connect Foxglove. The
+`--check` run writes diagnostics under `logs/sim-check/`. Native mode requires
+ROS 2 Jazzy, colcon, and the packages listed in `src/*/package.xml` installed
+on the host; Docker mode carries those dependencies. Run
+`./scripts/start_sim.sh --help` for all options.
 
 Everything below runs on a laptop with cmake, a C compiler and Python 3.10 or newer; ROS 2 is only needed for the message package.
 
