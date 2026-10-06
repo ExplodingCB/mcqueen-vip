@@ -23,7 +23,7 @@ def _parse_set(items):
     for item in items or []:
         key, value = item.split("=", 1)
         try:
-            out[key] = float(value)
+            out[key] = json.loads(value)  # numbers, and lists such as a GNSS schedule
         except ValueError:
             out[key] = value
     return out
@@ -64,7 +64,12 @@ def cmd_simulate(args) -> int:
     from mcq_sim.environment import Simulator, evaluate
 
     sim = Simulator(
-        Track.load(args.track), config=args.kart_config, policy=args.policy, speed_cap=args.speed_cap, seed=args.seed
+        Track.load(args.track),
+        config=args.kart_config,
+        policy=args.policy,
+        speed_cap=args.speed_cap,
+        seed=args.seed,
+        tuning=load_params(args.config).override(_parse_set(args.set)),
     )
     if args.command == "view":
         from mcq_sim.viewer import serve
@@ -131,7 +136,19 @@ def main(argv=None) -> int:
         command = sub.add_parser(name, help=help_text)
         command.add_argument("--track", default="tracks/purdue_gp")
         command.add_argument("--kart-config", help="dynamics, camera and provenance YAML")
-        command.add_argument("--policy", default="reference", help="reference, camera-demo, or Python module:factory")
+        command.add_argument(
+            "--policy",
+            default="reference",
+            help="reference, stack (sensors, estimator, planner and controllers), camera-demo, or module:factory",
+        )
+        command.add_argument("--config", help="tuning yaml for the stack (default: config/sim_default.yaml)")
+        command.add_argument(
+            "--set",
+            action="append",
+            metavar="SECTION.KEY=VALUE",
+            help="override a stack parameter; values are JSON, so a GNSS outage is "
+            '--set \'sensors.gnss.schedule=[[0,"FIXED"],[30,"NONE"],[40,"FIXED"]]\'',
+        )
         command.add_argument("--speed-cap", type=float, default=4.0)
         command.add_argument("--seed", type=int, default=0)
         if name == "view":
