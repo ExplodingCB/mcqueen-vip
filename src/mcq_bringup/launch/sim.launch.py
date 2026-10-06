@@ -67,7 +67,13 @@ def generate_launch_description():
                 executable="sim_node",
                 name="sim_node",
                 output="screen",
-                parameters=[{"track_dir": track, "publish_ego_state": LaunchConfiguration("ego_from_sim")}],
+                parameters=[
+                    {
+                        "track_dir": track,
+                        "publish_ego_state": LaunchConfiguration("ego_from_sim"),
+                        "handover_delay": LaunchConfiguration("handover_delay"),
+                    }
+                ],
             ),
             Node(
                 package="mcq_sim",

@@ -139,9 +139,10 @@ class TelemetryNode(Node):
         msg.current_lap_time = self.laps.elapsed(now)
         msg.last_lap_time, msg.best_lap_time = self.laps.last_lap, self.laps.best_lap
         self.pub.publish(msg)
-        if msg.ego_valid and ego.header.frame_id == "map" and all(
-            math.isfinite(value)
-            for value in (ego.pose.position.x, ego.pose.position.y, ego.pose.position.z)
+        if (
+            msg.ego_valid
+            and ego.header.frame_id == "map"
+            and all(math.isfinite(value) for value in (ego.pose.position.x, ego.pose.position.y, ego.pose.position.z))
         ):
             pose = PoseStamped()
             pose.header = ego.header
