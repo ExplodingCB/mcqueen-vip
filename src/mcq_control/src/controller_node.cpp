@@ -22,6 +22,7 @@
 #include "mcq_msgs/msg/vehicle_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+#include "replay_step.hpp"
 
 namespace mcq_control
 {
@@ -36,7 +37,7 @@ class ControllerNode : public rclcpp::Node
 {
 public:
   explicit ControllerNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("controller", options)
+  : rclcpp::Node("controller", options), replay_(*this)
   {
     const double rate_hz = declare_parameter<double>("rate_hz", 100.0);
     dt_ = static_cast<float>(1.0 / rate_hz);
@@ -78,7 +79,7 @@ public:
 
     // Best-effort, keep-last: a slow subscriber (the recorder, the pit link)
     // must never back-pressure the control loop. Freshness is checked by age.
-    const auto qos = rclcpp::SensorDataQoS();
+    const auto qos = replay_.qos();
     pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
     sub_traj_ = create_subscription<Trajectory>("trajectory", qos, [this](const Trajectory::SharedPtr msg) {
       if (!traj_) {
@@ -87,6 +88,7 @@ public:
           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
       }
       traj_ = msg;
+      replay_.received("trajectory", msg->header);
     });
     sub_ego_ = create_subscription<EgoState>("ego_state", qos, [this](const EgoState::SharedPtr msg) {
       if (!ego_) {
@@ -95,13 +97,24 @@ public:
           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
       }
       ego_ = msg;
+      replay_.received("ego_state", msg->header);
     });
     sub_geofence_ = create_subscription<GeofenceState>(
-      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) { geofence_ = msg; });
+      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) {
+        geofence_ = msg;
+        replay_.received("geofence_state", msg->header);
+      });
     sub_vehicle_ = create_subscription<VehicleState>(
-      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
-    timer_ = create_wall_timer(
-      std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(); });
+      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) {
+        vehicle_ = msg;
+        replay_.received("vehicle_state", msg->header);
+      });
+    if (replay_.enabled()) {
+      replay_.start([this](const rclcpp::Time & stamp) { tick(stamp); });
+    } else {
+      timer_ = create_wall_timer(
+        std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(this->now()); });
+    }
     RCLCPP_INFO(get_logger(), "controller running at %.0f Hz", rate_hz);
   }
 
@@ -139,9 +152,8 @@ private:
     a_t = pts.back().a;
   }
 
-  void tick()
+  void tick(const rclcpp::Time & now)
   {
-    const rclcpp::Time now = this->now();
     VehicleCommand cmd;
     cmd.header.stamp = now;
     cmd.header.frame_id = "base_link";
@@ -225,6 +237,7 @@ private:
     pub_->publish(cmd);
   }
 
+  mcq_replay::ReplayStep replay_;
   float dt_{0.01f};
   double trajectory_max_age_{0.2};
   double ego_max_age_{0.1};

@@ -26,9 +26,21 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 colcon test && colcon test-result --verbose
 ```
 
-C and C++ packages use `ament_cmake` with warnings as errors, `clang-format` (the config file at the root) and `clang-tidy` in CI. Python packages use `ruff` for lint and format (configured in the root `pyproject.toml`) and `pytest` for tests. `pre-commit` runs both before every commit. CI on GitHub Actions (`.github/workflows/ci.yml`) has a host job with no ROS (lint, clang-format, the gateway and control core cmake tests, pytest, and the simulator lapping the synthetic oval) and a Jazzy container job that builds the ROS 2 packages. The replay suite against reference MCAP files stored with Git LFS is added when the first logs exist.
+C and C++ packages use `ament_cmake` with warnings as errors, `clang-format` (the config file at the root) and `clang-tidy` in CI. Python packages use `ruff` for lint and format (configured in the root `pyproject.toml`) and `pytest` for tests. `pre-commit` runs both before every commit. CI on GitHub Actions (`.github/workflows/ci.yml`) has a host job with no ROS (lint, clang-format, the gateway and control core cmake tests, pytest, and the simulator lapping the synthetic oval) and a Jazzy container job that builds the ROS 2 packages. The Jazzy job also replays a synthetic MCAP through the actual controller on every pull request, comparing against an independently built, pinned controller revision. A deliberate YAML gain mutation must fail with the divergent field and timestamp; generated reference bags and diagnostics are retained as CI artifacts, rather than committed to git.
 
 The hot-path math is written once in dependency-free C: `firmware/gateway` (state machine, heartbeat, limits, codec) for the microcontroller and `src/mcq_control/core` (controllers, bicycle model, speed profile) for the Jetson. Both build standalone with cmake and carry their own host tests; the ROS 2 nodes are thin wrappers, and the Python simulator loads `mcq_control/core` through ctypes so the same code is exercised off the kart. Board support for the gateway is cross-compiled in the same container; the hardware-in-the-loop job is run manually on the bench rig. The README lists the exact commands.
+
+### Controller replay
+
+After a ROS build and the recorded graph smoke test, run:
+
+```bash
+tools/replay/ci.sh /tmp/phase0_bag ./replay-artifacts
+```
+
+This rebuilds the baseline revision in `tools/replay/reference/revision` with a frozen transport-only patch, replays the recorded inputs into that baseline, records a deterministic reference MCAP, compares the candidate, and verifies that a real `longitudinal.k_p` change fails. It never uses candidate output to generate its own expected values. To compare an existing deterministic reference, source the workspace and run `python3 tools/replay/replay.py --bag /path/to/reference`.
+
+The driver uses acknowledged input delivery and explicit recorded timestamps, because a normal live bag does not record callback ordering. The normalized reference preserves the source bag's data and tick schedule; it does not prove exact reproduction of its asynchronous live output or real-time latency. Per-field tolerances and topic mappings live in `tools/replay/controller.yaml`. Intentional controller behavior changes require a reviewed baseline revision update. See [the replay protocol and extension guide](../tools/replay/README.md).
 
 ### Bench without hardware
 

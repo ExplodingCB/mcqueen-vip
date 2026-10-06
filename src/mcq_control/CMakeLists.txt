@@ -8,6 +8,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(mcq_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # The control math, built exactly as it is built standalone (host tests included,
 # they run under colcon test as ctest tests).
@@ -20,6 +21,7 @@ target_link_libraries(controller_component PUBLIC
   rclcpp::rclcpp
   rclcpp_components::component
   ${mcq_msgs_TARGETS}
+  ${std_msgs_TARGETS}
 )
 rclcpp_components_register_node(controller_component
   PLUGIN "mcq_control::ControllerNode"

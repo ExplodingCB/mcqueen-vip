@@ -33,3 +33,7 @@ firmware/gateway/build/
 src/mcq_control/core/build/
 src/mcq_localization/core/build/
 *.egg-info/
+
+# Generated replay evidence is uploaded by CI, never committed.
+replay-artifacts/
+replay-node.log
