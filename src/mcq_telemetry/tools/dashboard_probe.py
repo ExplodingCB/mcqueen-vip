@@ -60,7 +60,9 @@ def main():
     connection = None
     while running and time.monotonic() < deadline:
         try:
-            connection = websocket.create_connection(args.url, subprotocols=["foxglove.websocket.v1"], timeout=1)
+            connection = websocket.create_connection(
+                args.url, subprotocols=["foxglove.sdk.v1", "foxglove.websocket.v1"], timeout=1
+            )
             break
         except (OSError, websocket.WebSocketException):
             time.sleep(0.2)
