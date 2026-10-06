@@ -1,7 +1,42 @@
 import numpy as np
 import pytest
 
-from mcq_sim.track import Raceline, Track, base_to_map
+from mcq_sim.track import Raceline, Track, base_to_map, wrap_angle
+
+
+def test_wrap_angle():
+    # The canonical interval is [-pi, pi): both boundary angles map to -pi.
+    angles = np.array([0.0, np.pi, -np.pi, 3 * np.pi, -3 * np.pi, 2 * np.pi + 0.1])
+    expected = np.array([0.0, -np.pi, -np.pi, -np.pi, -np.pi, 0.1])
+    np.testing.assert_allclose(wrap_angle(angles), expected, rtol=0.0, atol=1e-12)
+    for angle, value in zip(angles, expected, strict=True):
+        assert wrap_angle(float(angle)) == pytest.approx(value, abs=1e-12, rel=0.0)
+
+
+def test_width_at(oval):
+    # A 5 m wide oval has a 2.5 m half-width on each side, including the seam.
+    arc_lengths = np.array([0.0, 5.0, 75.0, oval.length / 2, oval.length])
+    left, right = oval.width_at(arc_lengths)
+    np.testing.assert_allclose(left, np.full(arc_lengths.shape, 2.5), rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(right, np.full(arc_lengths.shape, 2.5), rtol=0.0, atol=1e-12)
+    for s in arc_lengths:
+        left, right = oval.width_at(float(s))
+        assert left[0] == pytest.approx(2.5)
+        assert right[0] == pytest.approx(2.5)
+
+
+def test_cartesian_wraps_arc_length(oval):
+    # Moving a full lap in either direction preserves position and heading.
+    s = np.array([5.0, oval.length - 5.0])
+    d = np.array([1.0, -1.0])
+    expected = oval.cartesian(s, d)
+    wrapped = oval.cartesian([oval.length + 5.0, -5.0], d)
+    for actual, reference in zip(wrapped, expected, strict=True):
+        np.testing.assert_allclose(actual, reference, rtol=0.0, atol=1e-12)
+    for arc_length, offset, reference_s in zip([oval.length + 5.0, -5.0], d, s, strict=True):
+        np.testing.assert_allclose(
+            oval.cartesian(arc_length, offset), oval.cartesian(reference_s, offset), rtol=0.0, atol=1e-12
+        )
 
 
 def test_oval_geometry(oval):
