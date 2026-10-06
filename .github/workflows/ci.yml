@@ -93,7 +93,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential cmake python3-numpy python3-scipy python3-yaml python3-pytest ros-jazzy-rosbag2-py ros-jazzy-rosbag2-storage-mcap
+          apt-get install -y --no-install-recommends build-essential cmake python3-numpy python3-scipy python3-yaml python3-pytest python3-websocket ros-jazzy-rosbag2-py ros-jazzy-rosbag2-storage-mcap
           rosdep update --rosdistro jazzy
           rosdep install --from-paths src --ignore-src -y --rosdistro jazzy
       - name: Build
@@ -104,7 +104,7 @@ jobs:
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          colcon test --packages-select mcq_control mcq_track --event-handlers console_direct+
+          colcon test --packages-select mcq_control mcq_track mcq_telemetry --event-handlers console_direct+
           colcon test-result --verbose
           ros2 interface show mcq_msgs/msg/VehicleCommand
       - name: Graph smoke test with recording (cold start)
@@ -147,3 +147,19 @@ jobs:
           path: replay-artifacts/
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Telemetry dashboard full-run comparison
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          src/mcq_telemetry/tools/graph_compare.sh
+      - name: Telemetry acceptance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: telemetry-graph-diagnostics
+          path: |
+            metrics_*.json
+            dashboard_websocket.json
+            launch_telemetry_*.log
+            hz_*telemetry*.txt

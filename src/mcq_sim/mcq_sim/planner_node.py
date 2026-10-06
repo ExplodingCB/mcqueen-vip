@@ -11,7 +11,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 
-from mcq_msgs.msg import EgoState, GeofenceState, TrackModel
+from mcq_msgs.msg import EgoState, GeofenceState, PlannerStatus, TrackModel
 from mcq_msgs.msg import Trajectory as TrajectoryMsg
 from mcq_sim.params import DEFAULT_CONFIG, load_params
 from mcq_sim.planner import FrenetPlanner, PlannerParams
@@ -49,6 +49,8 @@ class PlannerNode(Node):
         self.ego: EgoState | None = None
         self.stop_requested = False
         qos = qos_profile_sensor_data
+        self.pub_status = self.create_publisher(PlannerStatus, "planner_status", qos)
+        self.create_timer(0.1, self.publish_status)
         self.pub_traj = self.create_publisher(TrajectoryMsg, "trajectory", qos)
         self.create_subscription(EgoState, "ego_state", self.on_ego, qos)
         self.create_subscription(GeofenceState, "geofence_state", self.on_geofence, qos)
@@ -58,6 +60,13 @@ class PlannerNode(Node):
         self.create_subscription(TrackModel, "track_model", self.on_track, model_qos)
         self.create_timer(1.0 / float(self.get_parameter("rate_hz").value), self.plan)
         self.get_logger().info(f"waiting for TrackModel, mode {self.mode}, cap {pp.v_cap} m/s")
+
+    def publish_status(self):
+        msg = PlannerStatus()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.submode = self.mode
+        msg.speed_cap = float(self.pp.boundary_v_cap if self.mode == "BOUNDARY" else self.pp.v_cap)
+        self.pub_status.publish(msg)
 
     def on_ego(self, msg: EgoState):
         self.ego = msg
