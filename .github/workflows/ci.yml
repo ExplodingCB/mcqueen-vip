@@ -59,7 +59,7 @@ jobs:
             echo "::warning::vcan unavailable on this runner; the gateway_host bus test will be skipped"
           fi
       - name: Python tests (simulator, DBC, survey, gateway over vcan, training tooling)
-        run: python -m pytest -q -rs
+        run: PYTHONPATH=src/mcq_sim python -m pytest -q -rs
       - name: Phase 0 loop on the synthetic oval
         run: |
           PYTHONPATH=src/mcq_sim python -m mcq_sim run --track tracks/synthetic_oval --laps 2

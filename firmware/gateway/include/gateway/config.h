@@ -31,6 +31,11 @@
 #define GW_HEARTBEAT_CONTINUOUS_MS 1000u  // required before AUTO entry
 #define GW_HEARTBEAT_MAX_SKIP 5u          // accepted counter advance is 1..this
 
+// RC receiver. Local safety policy, not a CRSF protocol constant. Bench-check
+// against the chosen receiver packet rate and UART scheduling before driving.
+#define GW_RC_TIMEOUT_MS 100u
+#define GW_CRSF_FRAME_TIMEOUT_MS 20u  // discard stalled/trickled partial frames
+
 // Urgent stop reset.
 #define GW_URGENT_RESET_TIMEOUT_MS 30000u  // standstill without operator reset: DRIVETRAIN_OFF
 
