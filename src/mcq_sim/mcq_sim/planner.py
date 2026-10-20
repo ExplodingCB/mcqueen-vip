@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from mcq_sim import ccontrol
+from mcq_sim.reference import smooth_local_reference
 from mcq_sim.track import Raceline, Track, base_to_map, wrap_angle
 
 
@@ -39,6 +40,11 @@ class PlannerParams:
     boundary_range: float = 25.0
     min_path_length: float = 6.0
     kappa_max: float = 0.4  # from the steering limit: tan(steer_max) / wheelbase
+    # BOUNDARY mode normally offsets from the midpoint of the perceived edges,
+    # which in a hairpin is a curve tighter than the kart can turn. With this on
+    # the reference is the minimum-curvature line through the perceived corridor.
+    smooth_boundary_reference: bool = False
+    smooth_keep_extra: float = 0.3  # m beyond half width plus margin
     maneuver_fractions: tuple = (0.5, 1.0)  # fraction of the path over which d reaches d_end
 
     @classmethod
@@ -104,6 +110,7 @@ class FrenetPlanner:
         self.mode = mode
         self.raceline = raceline
         self.last: Trajectory | None = None
+        self.last_stats: dict = {}
 
     # ------------------------------------------------------------ helpers
     def _reference(self, x, y, yaw, bounds):
@@ -112,6 +119,9 @@ class FrenetPlanner:
                 raise ValueError("BOUNDARY mode needs perceived bounds")
             left, right = bounds
             ref = Track.from_bounds(base_to_map(left, x, y, yaw), base_to_map(right, x, y, yaw))
+            if self.p.smooth_boundary_reference:
+                keep = self.p.kart_half_width + self.p.margin + self.p.smooth_keep_extra
+                ref = smooth_local_reference(ref, keep)
             return ref, self.p.boundary_v_cap, "BOUNDARY"
         if self.raceline is not None:
             return self.track, self.p.v_cap, "RACELINE"
@@ -178,7 +188,15 @@ class FrenetPlanner:
         tol = 1e-6
         inside = (wl[None, :] - d_k >= keep - tol) & (wr[None, :] + d_k >= keep - tol)
         violation = np.maximum(keep - (wl[None, :] - d_k), keep - (wr[None, :] + d_k)).max(axis=1)
-        feasible = inside.all(axis=1) & (np.abs(kappa_k[:, 1:-1]).max(axis=1) <= p.kappa_max)
+        steerable = np.abs(kappa_k[:, 1:-1]).max(axis=1) <= p.kappa_max
+        feasible = inside.all(axis=1) & steerable
+        self.last_stats = {
+            "candidates": m,
+            "inside": int(inside.all(axis=1).sum()),
+            "steerable": int(steerable.sum()),
+            "min_kappa_max": float(np.abs(kappa_k[:, 1:-1]).max(axis=1).min()),
+            "path_length": float(length),
+        }
         for ox, oy, orad in obstacles:
             clear = np.hypot(xs - ox, ys - oy) > orad + p.kart_half_width
             feasible &= clear.all(axis=1)

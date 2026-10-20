@@ -6,6 +6,10 @@ The first target is a fully autonomous lap in under 60 seconds with no human int
 
 Status: Phase 0 in progress. The design draft is in `docs/`; the code that exists runs without the kart: the gateway firmware core with its fault-injection tests, the C control core, the CAN definition with generated codecs and a SocketCAN bridge, the ROS 2 message package, a simulator that closes the loop on a synthetic oval both as a Python harness and as the ROS 2 graph (simulator, planner, controller nodes), and the survey tool. Read the docs in order, then `## Build and test` below.
 
+## Trained model
+
+A camera-only driving model for the track is published on Hugging Face: **[ExplodingCB2/mcqueen-driving-model](https://huggingface.co/ExplodingCB2/mcqueen-driving-model)** (weights, model card, and a loader that runs on an image). One camera frame in; a pavement mask, a racing line and a target speed out. `drive-v5` laps the simulated track in 64.6 s with about 0.4 m to the edge, and its pavement mask scores 0.84 IoU on held-out real kart footage against automatic labels. **It is a simulator result: it has not seen the kart's own camera or driven a real kart.** The version-by-version record, with what each model measurably did and what none of it shows, is [docs/13](docs/13-driving-model-versions.md); the training code is in `training/perception/`. The weights were trained partly on frames from third-party YouTube videos (auto-labeled), so read the model card before reusing them.
+
 ## Quick facts
 
 The provisional Purdue simulator now runs locally with a visual viewer,
@@ -40,6 +44,10 @@ from a georeferenced Indiana orthophoto. These remain estimates pending an RTK s
 | [docs/09-work-queue.md](docs/09-work-queue.md) | Where the tree stands and the code that needs writing next, in lanes one person can own |
 | [docs/10-simulator.md](docs/10-simulator.md) | Visual Purdue simulator, camera-model interface and physics assumptions |
 | [docs/11-simulator-validation.md](docs/11-simulator-validation.md) | Measured telemetry replay and accuracy validation contract |
+| [docs/12-simulator-build-check.md](docs/12-simulator-build-check.md) | What was built and measured in the simulator, build by build |
+| [docs/13-driving-model-versions.md](docs/13-driving-model-versions.md) | The camera-driving model, version by version: what changed, what it measurably did, and what it does not show |
+| [docs/14-desktop-handoff.md](docs/14-desktop-handoff.md) | Moving the heavy training and search runs to a CUDA desktop (WSL2), with setup scripts in `tools/desktop/` |
+| [docs/15-demo-runbook.md](docs/15-demo-runbook.md) | Running the live demo (3D chase view, top-down map, the model's own view) and presenting it |
 
 ## The stack in one paragraph
 

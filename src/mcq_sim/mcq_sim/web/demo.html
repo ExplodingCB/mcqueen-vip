@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>McQueen live demo</title>
+<style>
+:root{--bg:#0e0f11;--panel:#17191c;--ink:#f1f1ee;--mute:#9a9ea6;--line:#2a2d32;--red:#e3342a;--gold:#ffd400;--mag:#ff2bd6;--good:#37d39b;--bad:#ff6b5e;--blue:#5b9bff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+header{display:flex;align-items:center;gap:14px;padding:8px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;letter-spacing:.3px}
+header h1 b{color:var(--red)}
+header .sub{color:var(--mute);font-size:12px}
+.spacer{flex:1}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 12px;font-size:12px;white-space:nowrap}
+.chip b{color:var(--gold);font-weight:600}
+main{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:10px;padding:10px;min-height:0}
+#view3d{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#101214;min-height:0}
+#gl{width:100%;height:100%;display:block}
+#hud{position:absolute;left:14px;top:12px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+#mph{font-size:64px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+#mph small{font-size:18px;color:var(--mute);margin-left:6px;font-weight:500}
+#hud .row{display:flex;gap:16px;margin-top:6px;font-size:13px;color:#dcdcd8;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+#hud .row span b{color:var(--ink)}
+#progress{position:absolute;left:14px;right:14px;bottom:12px;height:8px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}
+#progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:6px}
+#banner{position:absolute;left:50%;top:18%;transform:translateX(-50%);padding:12px 26px;border-radius:12px;font-size:26px;font-weight:700;display:none;text-align:center;backdrop-filter:blur(6px)}
+#banner.ok{background:rgba(55,211,155,.22);border:2px solid var(--good);color:#c8ffe9}
+#banner.bad{background:rgba(255,107,94,.22);border:2px solid var(--bad);color:#ffd6d1}
+#banner small{display:block;font-size:14px;font-weight:500;color:#e6e6e2;margin-top:2px}
+#nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--mute);text-align:center;padding:30px}
+aside{display:flex;flex-direction:column;gap:10px;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-height:0;display:flex;flex-direction:column}
+.card h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.6px;display:flex;justify-content:space-between}
+.card h3 span{text-transform:none;letter-spacing:0;font-weight:400}
+#mapcard{flex:1.25}#eyecard{flex:1}#logcard{flex:.55;overflow:auto}
+canvas.fit{width:100%;flex:1;min-height:0;display:block;border-radius:8px;background:#0b0c0e}
+.legend{font-size:11px;color:var(--mute);margin-top:5px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 8px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+td,th{padding:2px 6px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500}
+td.ok{color:var(--good)}td.bad{color:var(--bad)}
+footer{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:8px 14px;border-top:1px solid var(--line);font-size:13px}
+button,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button.primary{background:var(--red);border-color:transparent;font-weight:600;min-width:92px}
+button.on{border-color:var(--gold);color:var(--gold)}
+label{display:inline-flex;align-items:center;gap:6px;color:var(--mute);cursor:pointer}
+input[type=range]{width:150px;accent-color:var(--red)}
+.group{display:flex;align-items:center;gap:6px}.group>span{color:var(--mute);font-size:12px}
+kbd{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px;color:var(--mute)}
+body.present footer{display:none}
+body.present header .sub{display:none}
+#caption{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);max-width:78%;padding:10px 22px;border-radius:12px;background:rgba(10,11,13,.72);backdrop-filter:blur(6px);font-size:22px;font-weight:600;text-align:center;display:none;line-height:1.3}
+body.present #caption.show{display:block}
+#slide{position:absolute;inset:0;background:rgba(8,9,11,.9);display:none;align-items:center;justify-content:center;z-index:5;padding:30px}
+#slide.show{display:flex}
+#slide .box{max-width:860px;width:100%}
+#slide h2{font-size:44px;margin:0 0 4px;line-height:1.1}
+#slide h2.ok{color:var(--good)}#slide h2.bad{color:var(--bad)}
+#slide .meta{color:var(--mute);font-size:16px;margin-bottom:22px}
+#slide h3{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--gold);margin:0 0 8px}
+#slide ol{margin:0 0 16px;padding-left:22px;font-size:19px;line-height:1.55}
+#slide .foot{font-size:13px;color:var(--mute);border-top:1px solid var(--line);padding-top:10px}
+#presenthint{position:absolute;right:14px;top:10px;font-size:12px;color:var(--mute);display:none}
+body.present #presenthint{display:block}
+@media (max-width:900px){body{overflow:auto;display:block}main{grid-template-columns:1fr}#view3d{height:56vh}}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>McQueen</b> · camera-driven kart</h1>
+  <span class="sub">Purdue Grand Prix track · simulator · the model sees only the camera</span>
+  <span class="spacer"></span>
+  <span class="chip">driver <b id="modelname">–</b></span>
+  <span class="chip" id="statechip">ready</span>
+</header>
+<main>
+  <section id="view3d">
+    <canvas id="gl"></canvas>
+    <div id="nogl">The 3D view loads three.js from cdnjs.cloudflare.com, so it needs a network connection.<br>The 2D map and the model's view still work.</div>
+    <div id="hud">
+      <div id="mph">0<small>mph</small></div>
+      <div class="row"><span><b id="ms">0.0</b> m/s</span><span>target <b id="tgt">–</b></span><span>cap <b id="capshow">–</b></span><span>steer <b id="steer">0°</b></span></div>
+      <div class="row"><span>time <b id="time">0.0 s</b></span><span>progress <b id="pct">0%</b></span><span>edge clearance <b id="clr">–</b></span><span>GPS error <b id="gps">–</b></span></div>
+      <div class="row"><span>safety: <b id="corr">0</b> corrected · <b id="veto">0</b> refused</span></div>
+    </div>
+    <div id="banner"></div>
+    <div id="caption"></div>
+    <div id="presenthint">presenting · <kbd>space</kbd> start / run again · <kbd>P</kbd> exit</div>
+    <div id="slide"><div class="box"></div></div>
+    <div id="progress"><i id="pbar"></i></div>
+  </section>
+  <aside>
+    <section class="card" id="mapcard"><h3>Track, from above <span id="maplegend"></span></h3><canvas class="fit" id="map"></canvas></section>
+    <section class="card" id="eyecard"><h3>What the model sees <span>camera only</span></h3><canvas class="fit" id="eye" width="480" height="270"></canvas>
+      <div class="legend"><i style="background:var(--mag)"></i>pavement it found<i style="background:var(--gold)"></i>the line it wants, with speeds (m/s)</div></section>
+    <section class="card" id="logcard"><h3>This session</h3><table id="log"><tr><th>driver</th><th>cap</th><th>result</th><th>edge</th></tr></table></section>
+  </aside>
+</main>
+<footer>
+  <button class="primary" id="go">Start</button>
+  <button id="reset">Reset</button>
+  <button id="presentbtn">Present</button>
+  <div class="group"><span>driver</span><select id="model"></select></div>
+  <div class="group"><span>speed cap</span><input type="range" id="cap" min="3" max="25" step="0.5" value="10"><b id="capval">22 mph</b></div>
+  <div class="group"><span>sim speed</span>
+    <button data-rate="1" class="on">1×</button><button data-rate="2">2×</button><button data-rate="4">4×</button></div>
+  <div class="group"><span>camera</span>
+    <button data-view="chase" class="on">Chase</button><button data-view="cockpit">Cockpit</button><button data-view="overhead">Above</button><button data-view="overview">Overview</button></div>
+  <label title="Experimental: the newest models do not complete laps with these"><input type="checkbox" id="race"> faster limits (experimental)</label>
+  <label><input type="checkbox" id="showline" checked> model's line</label>
+  <label><input type="checkbox" id="showcorr" checked> perceived pavement</label>
+  <div class="group"><span>after a run</span><select id="after"><option value="stop">stop</option><option value="replay">replay</option><option value="next">next driver</option></select></div>
+  <span class="spacer"></span>
+  <span class="sub"><kbd>space</kbd> start · <kbd>P</kbd> present · <kbd>R</kbd> reset · <kbd>1</kbd>-<kbd>4</kbd> camera · <kbd>F</kbd> fullscreen · drag to orbit</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const api=(path,body)=>fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(r=>r.json());
+const MPH=2.23694;
+const NOCAP=24.5; // the slider's top end means no cap: the model decides its own speed
+const capText=v=>v>=NOCAP?'no cap: the model decides':Math.round(v*MPH)+' mph';
+const HAVE3D=typeof THREE!=='undefined';
+
+// ------------------------------------------------------------------ state
+let info,track,vehicle,aerialImg=null,reference=null;
+let cur=null,prev=null,simClock=0,lastWall=performance.now();
+let running=false,rate=1,finishedShown=false,view='chase';
+let trail=[],orbit={az:0,el:0.33,dist:7.5};
+const camSmooth={p:null,t:null};
+const log=[];
+const REASONS={body_outside_track:'left the pavement',time_limit:'ran out of time',trajectory_age:'lost its path',no_feasible_path:'found no safe path',
+  yaw_rate_inconsistent:'steering did not match (safety stop)',localization_covariance:'position uncertain (safety stop)',geofence:'left the geofence',
+  perception_no_drivable_path:'saw no drivable path',perception_corridor_too_narrow:'saw a corridor too narrow'};
+const human=r=>REASONS[String(r).replace('stack_stop: ','')]||String(r).replace('stack_stop: ','').replaceAll('_',' ');
+const fmtT=t=>t.toFixed(1)+' s';
+const lerp=(a,b,k)=>a+(b-a)*k;
+const lerpAngle=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;
+
+// ------------------------------------------------------------------ 3D scene
+let renderer,scene,camera,kartG,frontPivots=[],ribbons={};
+function makeRibbon(maxPts,width,color,z,vcolors){
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(maxPts*2*3);geo.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
+  let col=null;if(vcolors){col=new Float32Array(maxPts*2*3);geo.setAttribute('color',new THREE.BufferAttribute(col,3).setUsage(THREE.DynamicDrawUsage));}
+  const idx=[];for(let i=0;i<maxPts-1;i++){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}
+  geo.setIndex(idx);geo.setDrawRange(0,0);
+  const mat=new THREE.MeshBasicMaterial({color:vcolors?0xffffff:color,vertexColors:!!vcolors,side:THREE.DoubleSide,transparent:true,opacity:vcolors?0.9:0.95,depthWrite:false});
+  const mesh=new THREE.Mesh(geo,mat);mesh.frustumCulled=false;mesh.renderOrder=2;
+  return {mesh,set(points,colors){
+    const n=Math.min(points.length,maxPts);if(n<2){geo.setDrawRange(0,0);return;}
+    for(let i=0;i<n;i++){
+      const a=points[Math.max(0,i-1)],b=points[Math.min(n-1,i+1)];
+      let dx=b[0]-a[0],dy=b[1]-a[1];const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+      const nx=-dy*width/2,ny=dx*width/2,p=points[i];
+      pos.set([p[0]+nx,p[1]+ny,z,p[0]-nx,p[1]-ny,z],i*6);
+      if(col&&colors){const c=colors[i];col.set([c[0],c[1],c[2],c[0],c[1],c[2]],i*6);}
+    }
+    geo.attributes.position.needsUpdate=true;if(col)geo.attributes.color.needsUpdate=true;
+    geo.setDrawRange(0,(n-1)*6);
+  }};
+}
+function speedColor(v){const k=Math.max(0,Math.min(1,v/12));return [0.25+0.75*k,0.55+0.4*Math.min(1,k*1.4),1-0.9*k];}
+function box(w,l,h,mat,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,l,h),mat);m.position.set(x,y,z);m.castShadow=true;return m;}
+function label95(){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.fillStyle='#fff';g.beginPath();g.arc(64,64,60,0,7);g.fill();g.fillStyle='#d7261e';g.font='bold 78px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText('95',64,70);
+  return new THREE.CanvasTexture(c);}
+function buildKart(v){
+  const g=new THREE.Group();
+  const red=new THREE.MeshStandardMaterial({color:0xd7261e,roughness:.35,metalness:.25});
+  const dark=new THREE.MeshStandardMaterial({color:0x1b1c1f,roughness:.7});
+  const chrome=new THREE.MeshStandardMaterial({color:0xb9bdc4,roughness:.25,metalness:.8});
+  const wb=v?.wheelbase||1.4;
+  g.add(box(1.95,0.66,0.07,red,wb/2,0,0.17));            // floor pan
+  g.add(box(0.42,0.5,0.09,red,wb+0.35,0,0.19));          // nose
+  g.add(box(0.14,0.92,0.1,dark,wb+0.58,0,0.17));         // front bumper
+  for(const s of [-1,1])g.add(box(0.85,0.2,0.16,red,wb*0.42,s*0.46,0.24));   // side pods
+  g.add(box(0.34,0.38,0.5,dark,0.12,0,0.42));            // seat back
+  g.add(box(0.5,0.34,0.07,dark,0.45,0,0.29));            // seat base
+  g.add(box(0.34,0.3,0.26,chrome,-0.12,0,0.3));          // engine
+  const body=box(0.26,0.34,0.4,new THREE.MeshStandardMaterial({color:0x2a3a5a,roughness:.8}),0.4,0,0.52);g.add(body); // driver
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.14,18,14),new THREE.MeshStandardMaterial({color:0xf2f2ee,roughness:.3}));helmet.position.set(0.38,0,0.84);helmet.castShadow=true;g.add(helmet);
+  const visor=box(0.1,0.22,0.07,dark,0.5,0,0.86);g.add(visor);
+  const wheel=new THREE.Mesh(new THREE.TorusGeometry(0.1,0.014,8,20),dark);wheel.position.set(wb*0.68,0,0.55);wheel.rotation.y=-1.0;g.add(wheel);
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.4,8),dark);col.position.set(wb*0.64,0,0.43);col.rotation.z=1.0;g.add(col);
+  const plate=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.3),new THREE.MeshBasicMaterial({map:label95(),transparent:true}));plate.position.set(wb+0.3,0,0.242);g.add(plate);
+  const tyre=new THREE.MeshStandardMaterial({color:0x101012,roughness:.9});
+  const rim=new THREE.MeshStandardMaterial({color:0xcfcfcf,roughness:.3,metalness:.7});
+  function wheelMesh(r,wd){const m=new THREE.Group();const t=new THREE.Mesh(new THREE.CylinderGeometry(r,r,wd,22),tyre);t.castShadow=true;m.add(t);
+    const h=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,wd+0.01,14),rim);m.add(h);return m;}
+  for(const s of [-1,1]){const w=wheelMesh(0.14,0.2);w.position.set(0,s*0.66,0.14);g.add(w);}
+  frontPivots=[];
+  for(const s of [-1,1]){const piv=new THREE.Group();piv.position.set(wb,s*0.56,0.13);piv.add(wheelMesh(0.13,0.15));g.add(piv);frontPivots.push(piv);}
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.32,depthWrite:false}));
+  sh.scale.set(1.5,0.9,1);sh.position.set(wb/2,0,0.015);g.add(sh);
+  return g;
+}
+function init3D(){
+  if(!HAVE3D){$('nogl').style.display='flex';$('gl').style.display='none';return;}
+  const canvas=$('gl');
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x86aed6);scene.fog=new THREE.Fog(0x86aed6,120,520);
+  camera=new THREE.PerspectiveCamera(62,1,0.1,900);camera.up.set(0,0,1);camera.position.set(0,-30,20);
+  scene.add(new THREE.HemisphereLight(0xdfeeff,0x6b6a55,0.85));
+  const sun=new THREE.DirectionalLight(0xfff3dd,0.9);sun.position.set(-60,-40,90);sun.castShadow=true;scene.add(sun);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshBasicMaterial({color:0x5f7f4a}));ground.position.z=-0.06;scene.add(ground);
+  if(info.aerial?.bounds_enu){
+    const b=info.aerial.bounds_enu,w=b[2]-b[0],h=b[3]-b[1];
+    new THREE.TextureLoader().load('/api/aerial.png',tex=>{tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex}));m.position.set(b[0]+w/2,b[1]+h/2,-0.02);scene.add(m);});
+  }
+  // the pavement edge, so the track reads even where the photo is dull
+  for(const side of ['left','right']){const r=makeRibbon(track[side].length+1,0.18,0xffffff,0.03);
+    const pts=[...track[side],track[side][0]];r.set(pts);r.mesh.material.opacity=.55;scene.add(r.mesh);}
+  kartG=buildKart(vehicle);scene.add(kartG);
+  ribbons.trail=makeRibbon(1600,0.34,0xffffff,0.045,true);scene.add(ribbons.trail.mesh);
+  ribbons.line=makeRibbon(80,0.5,0xffd400,0.07);scene.add(ribbons.line.mesh);
+  ribbons.left=makeRibbon(80,0.16,0xff2bd6,0.06);scene.add(ribbons.left.mesh);
+  ribbons.right=makeRibbon(80,0.16,0xff2bd6,0.06);scene.add(ribbons.right.mesh);
+  ribbons.ref=makeRibbon(900,0.12,0xffffff,0.035);ribbons.ref.mesh.material.opacity=.28;scene.add(ribbons.ref.mesh);
+  // start / finish line
+  const c=track.center,p0=c[0],p1=c[2],hd=Math.atan2(p1[1]-p0[1],p1[0]-p0[0]);
+  const cv=document.createElement('canvas');cv.width=64;cv.height=256;const g=cv.getContext('2d');
+  for(let i=0;i<8;i++)for(let j=0;j<2;j++){g.fillStyle=(i+j)%2?'#111':'#fff';g.fillRect(j*32,i*32,32,32);}
+  const sf=new THREE.Mesh(new THREE.PlaneGeometry(0.9,6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)}));
+  sf.position.set(p0[0],p0[1],0.04);sf.rotation.z=hd;scene.add(sf);
+  resize();
+}
+function resize(){
+  const box3=$('view3d').getBoundingClientRect();
+  if(HAVE3D&&renderer){renderer.setSize(box3.width,box3.height,false);camera.aspect=box3.width/box3.height;camera.updateProjectionMatrix();}
+  for(const id of ['map','eye']){const c=$(id);const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);
+    if(id==='map'){c.width=Math.max(10,r.width*d);c.height=Math.max(10,r.height*d);}}
+}
+addEventListener('resize',resize);
+
+// ------------------------------------------------------------------ interpolated state
+function stateNow(now){
+  const dt=Math.min(0.1,(now-lastWall)/1000);lastWall=now;
+  if(!cur)return null;
+  if(running)simClock=Math.min(cur.t,simClock+dt*rate);else simClock=cur.t;
+  if(simClock<prev.t)simClock=prev.t;
+  const a=cur.t>prev.t?(simClock-prev.t)/(cur.t-prev.t):1;
+  return {x:lerp(prev.x,cur.x,a),y:lerp(prev.y,cur.y,a),yaw:lerpAngle(prev.yaw,cur.yaw,a),v:lerp(prev.v,cur.v,a),steer:lerp(prev.steer,cur.steer,a),t:simClock,progress:lerp(prev.progress,cur.progress,a)};
+}
+function placeCamera(s){
+  const fx=Math.cos(s.yaw),fy=Math.sin(s.yaw);let pos,look,fov=62;
+  if(view==='chase'){const h=s.yaw+orbit.az,d=orbit.dist,ce=Math.cos(orbit.el),se=Math.sin(orbit.el);
+    pos=[s.x-Math.cos(h)*d*ce,s.y-Math.sin(h)*d*ce,0.5+d*se];look=[s.x+fx*3,s.y+fy*3,0.45];}
+  else if(view==='cockpit'){pos=[s.x+fx*0.5,s.y+fy*0.5,0.78];look=[s.x+fx*22,s.y+fy*22,0.35];fov=78;}
+  else if(view==='overhead'){pos=[s.x-fx*5,s.y-fy*5,orbit.dist*5+14];look=[s.x+fx*1,s.y+fy*1,0];fov=50;}
+  else{const b=track.center,cx=b.reduce((a,p)=>a+p[0],0)/b.length,cy=b.reduce((a,p)=>a+p[1],0)/b.length,a=performance.now()/22000;
+    pos=[cx+Math.cos(a)*170,cy+Math.sin(a)*170,115];look=[cx,cy,0];fov=48;}
+  if(!camSmooth.p){camSmooth.p=pos.slice();camSmooth.t=look.slice();}
+  const k=view==='cockpit'?0.5:0.14;
+  for(let i=0;i<3;i++){camSmooth.p[i]=lerp(camSmooth.p[i],pos[i],k);camSmooth.t[i]=lerp(camSmooth.t[i],look[i],k);}
+  camera.fov=fov;camera.updateProjectionMatrix();camera.position.set(...camSmooth.p);camera.lookAt(...camSmooth.t);
+}
+
+// ------------------------------------------------------------------ drawing
+function drawMap(s){
+  const c=$('map'),g=c.getContext('2d'),W=c.width,H=c.height;g.clearRect(0,0,W,H);
+  const all=[...track.left,...track.right];let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(const p of all){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}
+  const pad=14,sc=Math.min((W-2*pad)/(x1-x0),(H-2*pad)/(y1-y0)),ox=(W-sc*(x1-x0))/2-x0*sc,oy=(H+sc*(y1-y0))/2+y0*sc;
+  const X=p=>p[0]*sc+ox,Y=p=>oy-p[1]*sc;
+  if(aerialImg&&info.aerial?.bounds_enu){const b=info.aerial.bounds_enu;g.globalAlpha=.9;g.drawImage(aerialImg,X([b[0],b[3]]),Y([b[0],b[3]]),(b[2]-b[0])*sc,(b[3]-b[1])*sc);g.globalAlpha=1;}
+  const poly=(pts,color,w,close)=>{g.beginPath();pts.forEach((p,i)=>i?g.lineTo(X(p),Y(p)):g.moveTo(X(p),Y(p)));if(close)g.closePath();g.strokeStyle=color;g.lineWidth=w;g.stroke();};
+  poly(track.left,'rgba(255,255,255,.75)',1.2,true);poly(track.right,'rgba(255,255,255,.75)',1.2,true);
+  if(reference){g.setLineDash([5,4]);poly(reference,'rgba(255,255,255,.45)',1,true);g.setLineDash([]);}
+  for(let i=1;i<trail.length;i++){g.beginPath();g.moveTo(X(trail[i-1]),Y(trail[i-1]));g.lineTo(X(trail[i]),Y(trail[i]));
+    const col=speedColor(trail[i][2]);g.strokeStyle=`rgb(${col.map(v=>Math.round(v*255)).join(',')})`;g.lineWidth=3;g.stroke();}
+  if(cur?.perceived&&$('showcorr').checked)for(const e of cur.perceived)poly(e,'#ff2bd6',1.6);
+  if(cur?.model_line&&$('showline').checked)poly(cur.model_line,'#ffd400',2.4);
+  const sf=track.center[0];g.fillStyle='#fff';g.fillRect(X(sf)-3,Y(sf)-3,6,6);
+  if(s){const px=X([s.x,s.y]),py=Y([s.x,s.y]);g.save();g.translate(px,py);g.rotate(-s.yaw);
+    g.fillStyle='#e3342a';g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.moveTo(9,0);g.lineTo(-6,-5);g.lineTo(-6,5);g.closePath();g.fill();g.stroke();g.restore();}
+}
+let camImg=new Image(),maskImg=new Image();
+camImg.onload=drawEye;maskImg.onload=drawEye;
+function project(px,py){const cp=info.camera,W=480,H=270,f=W/(2*Math.tan(cp.horizontal_fov_deg*Math.PI/360)),pitch=cp.pitch_down_deg*Math.PI/180;
+  const ahead=px-cp.forward_m,den=ahead*Math.cos(pitch)+cp.height_m*Math.sin(pitch);if(den<=0.05)return null;
+  const vert=(ahead*Math.sin(pitch)-cp.height_m*Math.cos(pitch))/den,scale=cp.height_m/(Math.sin(pitch)-vert*Math.cos(pitch));
+  const u=W/2-py*f/scale,v=H/2-vert*f;return (u<-20||u>W+20||v<0||v>H)?null:[u,v];}
+function drawEye(){
+  const c=$('eye'),g=c.getContext('2d');g.clearRect(0,0,480,270);
+  if(camImg.complete&&camImg.naturalWidth)g.drawImage(camImg,0,0,480,270);
+  if(cur?.mask&&maskImg.complete&&maskImg.naturalWidth)g.drawImage(maskImg,0,0,480,270);
+  if(cur?.drive){const pts=cur.drive.map(p=>[project(p[0],p[1]),p[2]]).filter(p=>p[0]);
+    if(pts.length>1){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0][0],p[0][1]):g.moveTo(p[0][0],p[0][1]));g.strokeStyle='rgba(255,212,0,.85)';g.lineWidth=2;g.stroke();}
+    g.font='bold 11px system-ui';g.textAlign='center';
+    pts.forEach((p,i)=>{g.fillStyle='#ffd400';g.beginPath();g.arc(p[0][0],p[0][1],4,0,7);g.fill();if(i%2===0){g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=3;g.strokeText(p[1].toFixed(0),p[0][0],p[0][1]-8);g.fillText(p[1].toFixed(0),p[0][0],p[0][1]-8);}});}
+}
+function hud(s){
+  if(!s)return;
+  $('mph').firstChild.nodeValue=Math.round(s.v*MPH);$('ms').textContent=s.v.toFixed(1);
+  $('steer').textContent=(s.steer*57.2958).toFixed(0)+'°';$('time').textContent=fmtT(s.t);
+  const pct=Math.min(100,100*s.progress/cur.length);$('pct').textContent=pct.toFixed(0)+'%';$('pbar').style.width=pct+'%';updateCaption(pct);
+}
+
+// ------------------------------------------------------------------ updates from the server
+function ingest(s){
+  const reset=!cur||s.t<cur.t-0.01;
+  prev=reset?s:cur;cur=s;if(reset){simClock=s.t;trail=[];camSmooth.p=null;finishedShown=false;$('banner').style.display='none';$('slide').classList.remove('show');}
+  trail.push([s.x,s.y,s.v]);if(trail.length>1500)trail.shift();
+  if(s.camera)camImg.src=s.camera;if(s.mask)maskImg.src=s.mask;else maskImg.removeAttribute('src');
+  $('modelname').textContent=s.model||'–';$('capshow').textContent=s.speed_cap>=NOCAP?'none (model decides)':s.speed_cap.toFixed(1)+' m/s ('+Math.round(s.speed_cap*MPH)+' mph)';
+  $('tgt').textContent=s.drive?s.drive[0][2].toFixed(1)+' m/s':'–';
+  $('clr').textContent=s.clearance==null?'–':s.clearance.toFixed(2)+' m';
+  $('corr').textContent=s.counters.corrections;$('veto').textContent=s.counters.vetoes;
+  $('gps').textContent=s.estimate?(s.estimate.position_error_m*100).toFixed(1)+' cm':'–';
+  const ended=!s.running&&(s.finished||s.reason);
+  $('statechip').textContent=s.finished?'lap complete':s.reason?'stopped':s.running?'driving':'ready';
+  $('go').textContent=s.running?'Pause':'Start';
+  if(ended&&!finishedShown)finish(s);
+}
+function finish(s){
+  finishedShown=true;const ok=s.finished&&!s.reason;
+  const b=$('banner');b.className=ok?'ok':'bad';
+  b.innerHTML=ok?`LAP COMPLETE · ${fmtT(s.t)}<small>${s.model} · speed ${capText(s.speed_cap)} · closest to an edge ${s.clearance?.toFixed(2)} m</small>`
+              :`STOPPED · ${human(s.reason)}<small>${s.model} · ${s.progress.toFixed(0)} m of ${s.length.toFixed(0)} m · speed ${capText(s.speed_cap)}</small>`;
+  b.style.display=present?'none':'block';
+  log.unshift({model:s.model,cap:capText(s.speed_cap).replace('no cap: the model decides','none'),result:ok?fmtT(s.t):`stopped at ${s.progress.toFixed(0)} m`,ok,edge:s.clearance==null?'–':s.clearance.toFixed(2)+' m'});
+  $('log').innerHTML='<tr><th>driver</th><th>cap</th><th>result</th><th>edge</th></tr>'+log.slice(0,8).map(r=>`<tr><td>${r.model}</td><td>${r.cap}</td><td class="${r.ok?'ok':'bad'}">${r.result}</td><td>${r.edge}</td></tr>`).join('');
+  if(present)showSlide(s,ok);
+  afterRun();
+}
+async function afterRun(){
+  const mode=$('after').value;if(mode==='stop')return;
+  await sleep(5000);if(!finishedShown)return;
+  if(mode==='next'){const o=[...$('model').options].map(x=>x.value),i=o.indexOf($('model').value);$('model').value=o[(i+1)%o.length];await api('/api/control',{action:'demo_model',name:$('model').value});}
+  else await api('/api/control',{action:'reset'});
+  ingest(await api('/api/demo/tick',{steps:1}));await api('/api/control',{action:'play'});running=true;
+}
+async function loop(){
+  while(true){
+    if(running){try{ingest(await api('/api/demo/tick',{steps:2*rate}));running=cur.running;}catch(e){await sleep(400);}await sleep(0);}
+    else await sleep(120);
+  }
+}
+
+// ------------------------------------------------------------------ controls
+async function control(body){await api('/api/control',body);}
+async function toggle(){
+  if(cur&&(cur.finished||cur.reason)){await control({action:'reset'});ingest(await api('/api/demo/tick',{steps:1}));}
+  if(running){await control({action:'pause'});running=false;$('go').textContent='Start';}
+  else{await control({action:'play'});running=true;$('go').textContent='Pause';}
+}
+async function resetRun(){await control({action:'reset'});running=false;ingest(await api('/api/demo/tick',{steps:1}));$('go').textContent='Start';}
+$('go').onclick=toggle;$('reset').onclick=resetRun;
+$('model').onchange=async e=>{running=false;await control({action:'demo_model',name:e.target.value});ingest(await api('/api/demo/tick',{steps:1}));};
+$('cap').oninput=e=>{$('capval').textContent=capText(+e.target.value);};
+$('cap').onchange=e=>control({action:'speed',value:+e.target.value});
+$('race').onchange=async e=>{running=false;await control({action:'race_limits',on:e.target.checked});ingest(await api('/api/demo/tick',{steps:1}));};
+document.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{rate=+b.dataset.rate;document.querySelectorAll('[data-rate]').forEach(x=>x.classList.toggle('on',x===b));});
+function setView(v){view=v;camSmooth.p=null;document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('on',x.dataset.view===v));}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+addEventListener('keydown',e=>{if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT')return;
+  if(e.code==='Space'){e.preventDefault();toggle();}else if(e.key==='r'||e.key==='R')resetRun();
+  else if('1234'.includes(e.key)&&e.key)setView(['chase','cockpit','overhead','overview'][+e.key-1]);
+  else if(e.key==='p'||e.key==='P')setPresent(!present);
+  else if(e.key==='f'||e.key==='F')document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();});
+const gl=$('gl');let drag=null;
+gl.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];gl.setPointerCapture(e.pointerId);});
+gl.addEventListener('pointermove',e=>{if(!drag)return;orbit.az-=(e.clientX-drag[0])*0.008;orbit.el=Math.max(0.08,Math.min(1.35,orbit.el+(e.clientY-drag[1])*0.006));drag=[e.clientX,e.clientY];});
+gl.addEventListener('pointerup',()=>{drag=null;});
+gl.addEventListener('dblclick',()=>{orbit={az:0,el:0.33,dist:7.5};});
+gl.addEventListener('wheel',e=>{e.preventDefault();orbit.dist=Math.max(3,Math.min(24,orbit.dist*(1+e.deltaY*0.001)));},{passive:false});
+
+
+// The driver the demo opens with: the one that laps cleanly and has the real-footage training (see docs/13).
+const PREFERRED='drive-v5';
+
+// ------------------------------------------------------------------ presentation mode
+// Edit these before presenting. They are what the closing slide asks the room for.
+const ASKS=[
+  'Footage from our own camera on the Purdue track: one 10-minute session at kart height',
+  'Track access: a day to record, then to test at low speed with a person on the switch',
+  'Raw onboard video from Grand Prix teams (nose or chassis mounts, not helmets)',
+  'The steering servo, brake and tyre specs, to replace our placeholder numbers',
+  'A surveyed set of the track edges (RTK), to check the track file and score the model',
+];
+const CAPTIONS=[ // [from % of the lap, text]
+  [0,'One camera image goes in. The model decides where to drive and how fast.'],
+  [4,'No map and no GPS inside the model: just pixels.'],
+  [22,'A safety layer keeps the kart on the pavement the camera can see.'],
+  [45,'Yellow dots are the model\'s own line, with the speed it wants at each point.'],
+  [68,'Slow for the corners, fast on the straights: nobody told it where they are.'],
+  [88,'Trained on real kart footage as well as the simulator, so it reads real pavement.'],
+];
+let present=false;
+function setPresent(on){present=on;if(on){$('cap').value=25;$('capval').textContent=capText(25);control({action:'speed',value:25});}document.body.classList.toggle('present',on);$('slide').classList.remove('show');resize();
+  if(!on)$('caption').classList.remove('show');}
+$('presentbtn').onclick=()=>setPresent(!present);
+function updateCaption(pct){
+  if(!present||!cur||finishedShown){$('caption').classList.remove('show');return;}
+  let text='';for(const [from,t] of CAPTIONS)if(pct>=from)text=t;
+  const c=$('caption');if(c.textContent!==text)c.textContent=text;c.classList.toggle('show',running&&!!text);
+}
+function showSlide(s,ok){
+  const sl=$('slide'),mph=capText(s.speed_cap);
+  const best=log.filter(r=>r.ok&&r.model===s.model).length;
+  sl.querySelector('.box').innerHTML=
+    `<h2 class="${ok?'ok':'bad'}">${ok?'Lap complete in '+fmtT(s.t):'It stopped: '+human(s.reason)}</h2>
+     <div class="meta">${s.model} · camera only · simulated Purdue Grand Prix track · speed: ${mph} · closest to an edge ${s.clearance==null?'–':s.clearance.toFixed(2)+' m'} · the safety layer corrected its line ${s.counters.corrections} times</div>
+     <h3>What we need to make it run</h3><ol>${ASKS.map(a=>`<li>${a}</li>`).join('')}</ol>
+     <div class="foot">These are simulator results on a simulated kart. The next step is the real camera and the real track. Press space to run again.</div>`;
+  sl.classList.add('show');
+}
+
+// ------------------------------------------------------------------ frame loop
+function frame(now){
+  const s=stateNow(now);
+  if(s){
+    if(HAVE3D&&renderer){kartG.position.set(s.x,s.y,0);kartG.rotation.z=s.yaw;frontPivots.forEach(p=>{p.rotation.z=s.steer;});
+      const pts=trail.map(p=>[p[0],p[1]]);ribbons.trail.set(pts,trail.map(p=>speedColor(p[2])));
+      const showLine=$('showline').checked,showCorr=$('showcorr').checked;
+      ribbons.line.mesh.visible=showLine&&!!cur.model_line;if(cur.model_line&&showLine)ribbons.line.set(cur.model_line);
+      for(const [k,i] of [['left',0],['right',1]]){ribbons[k].mesh.visible=showCorr&&!!cur.perceived;if(cur.perceived&&showCorr)ribbons[k].set(cur.perceived[i]);}
+      placeCamera(s);renderer.render(scene,camera);}
+    drawMap(s);hud(s);
+  }else drawMap(null);
+  requestAnimationFrame(frame);
+}
+
+// ------------------------------------------------------------------ start
+(async()=>{
+  info=await api('/api/demo/info');track=await api('/api/track');vehicle=track.vehicle;
+  $('model').innerHTML=info.models.map(m=>`<option value="${m}">${m==='expert'?'expert (reads the map)':m}</option>`).join('');
+  const cameraModels=info.models.filter(m=>m!=='expert');
+  const pick=info.model||(cameraModels.includes(PREFERRED)?PREFERRED:cameraModels[cameraModels.length-1])||'expert';$('model').value=pick;
+  $('race').checked=!!info.race;
+  if(info.aerial){aerialImg=new Image();aerialImg.src='/api/aerial.png';}
+  api('/api/reference').then(r=>{reference=r.line;if(HAVE3D&&ribbons.ref)ribbons.ref.set([...reference,reference[0]]);});
+  init3D();resize();
+  await control({action:'demo_model',name:pick});await control({action:'speed',value:+$('cap').value});
+  ingest(await api('/api/demo/tick',{steps:1}));
+  requestAnimationFrame(frame);loop();
+})();
+</script>
+</body>
+</html>

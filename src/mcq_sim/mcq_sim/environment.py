@@ -15,9 +15,12 @@ import yaml
 from mcq_sim.camera import CameraParams, DemoSegmenter, TrackCamera, checked_mask, mask_iou
 from mcq_sim.dynamics import DynamicKart, DynamicsParams, DynamicState
 from mcq_sim.params import load_params
+from mcq_sim.perception import CameraPerception, OraclePerception
 from mcq_sim.sensors import STATUS_NAME
 from mcq_sim.stack import DrivingStack, estimate_error_summary
 from mcq_sim.track import Track, wrap_angle
+
+MAX_SPEED_CAP = 25.0  # m/s (56 mph): above the 50 mph the karts are built for
 
 
 def default_kart_config():
@@ -55,19 +58,58 @@ class Simulator:
     """
 
     control_dt = 0.05
+    PROGRESS_WINDOW_M = 8.0
 
-    def __init__(self, track: Track, config=None, policy="reference", speed_cap=4.0, seed=0, tuning=None):
+    def __init__(
+        self,
+        track: Track,
+        config=None,
+        policy="reference",
+        speed_cap=4.0,
+        seed=0,
+        tuning=None,
+        perception="map",
+        camera_appearance="auto",
+    ):
         self.track = track
+        self.perception_model = None
+        self.perception_model_spec = None
         self.tuning = tuning or load_params()
+        self.perception_spec = perception
         self.vehicle_params, self.camera_params, self.provenance = load_kart(config)
-        self.camera = TrackCamera(track, self.camera_params)
+        self.camera = TrackCamera(
+            track, self.camera_params, self._appearance(camera_appearance, track, policy, perception)
+        )
         self.policy_name = policy
         self.segmenter = None if policy in ("reference", "manual", "stack") else load_segmenter(policy)
-        if not math.isfinite(speed_cap) or not 0 < speed_cap <= 12:
-            raise ValueError("speed cap must be in (0, 12] m/s")
+        if not math.isfinite(speed_cap) or not 0 < speed_cap <= MAX_SPEED_CAP:
+            raise ValueError(f"speed cap must be in (0, {MAX_SPEED_CAP:g}] m/s")
         self.speed_cap = speed_cap
         self.seed = seed
         self.reset()
+
+    @staticmethod
+    def _appearance(choice, track, policy, perception):
+        """``auto`` drapes the track's aerial photo when it has one, except for
+        the color-threshold demo, which only works on the flat procedural look."""
+        if choice != "auto":
+            return choice
+        if "camera-demo" in (policy, perception) or not track.meta.get("aerial_path"):
+            return "flat"
+        return "aerial"
+
+    def _make_perception(self):
+        """What feeds the stack's planner: nothing (it follows the map), the true
+        edges, or a segmentation model read through the camera."""
+        spec = self.perception_spec
+        if spec == "map":
+            return None
+        if spec == "oracle":
+            return OraclePerception(self.track, self.tuning.planner["boundary_range"])
+        if self.perception_model is None or self.perception_model_spec != spec:
+            self.perception_model = load_segmenter(spec)
+            self.perception_model_spec = spec
+        return CameraPerception(self.camera, self.perception_model, name=spec)
 
     def reset(self):
         x, y, yaw = self.track.cartesian(0)
@@ -88,9 +130,16 @@ class Simulator:
         self.last_truth = None
         self.last_frame_time = None
         self.stack = None
+        self.perception = None
         if self.policy_name == "stack":
+            self.perception = self._make_perception()
             self.stack = DrivingStack(
-                self.track, self.vehicle_params, self.tuning, speed_cap=self.speed_cap, seed=self.seed
+                self.track,
+                self.vehicle_params,
+                self.tuning,
+                speed_cap=self.speed_cap,
+                seed=self.seed,
+                perceive=self.perception,
             )
         if self.segmenter is not None and callable(getattr(self.segmenter, "reset", None)):
             self.segmenter.reset(self.seed)
@@ -163,6 +212,21 @@ class Simulator:
         target = min(self.speed_cap, math.sqrt(1.5 / max(abs(curve), 0.01)))
         return math.atan(self.vehicle_params.wheelbase * curve), *self._pedals(target)
 
+    def _progress_s(self, x, y):
+        """Arc length of the kart, searched only just around where it was.
+
+        The nearest centerline point is not always the right one: where the
+        track runs beside itself, a kart near one edge is nearer the other
+        stretch and a global projection jumps by tens of metres. In a hairpin
+        whose radius is smaller than the corridor half width the projection also
+        jumps by metres on the inside, which is a property of the coordinate,
+        not of the driving; progress is the sum of changes on one continuous
+        branch, so it does not inflate.
+        """
+        window = self.previous_s + np.linspace(-2.0, self.PROGRESS_WINDOW_M, 201)
+        cx, cy, _ = self.track.cartesian(window)
+        return float(window[np.argmin(np.hypot(cx - x, cy - y))] % self.track.length)
+
     def _advance(self, command, scoring=None):
         """One physics tick under ``command``, with the boundary and progress
         bookkeeping. ``scoring`` is extra columns measured before the step, so
@@ -173,9 +237,9 @@ class Simulator:
         clearance = float(self.track.distance_to_edge(points[:, 0], points[:, 1]).min())
         self.min_clearance = min(self.min_clearance, clearance)
         self.max_speed = max(self.max_speed, s.v)
-        current_s = float(self.track.frenet(s.x, s.y)[0][0])
+        current_s = self._progress_s(s.x, s.y)
         delta = (current_s - self.previous_s + self.track.length / 2) % self.track.length - self.track.length / 2
-        if abs(delta) > max(2, s.v * self.kart.dt * 3):
+        if abs(delta) >= self.PROGRESS_WINDOW_M - 0.1:
             self.reason = "track_projection_discontinuity"
         else:
             self.progress += delta
@@ -250,6 +314,9 @@ class Simulator:
 
     def report(self, laps=1):
         completed = max(0, int(self.progress / self.track.length))
+        perceiver = self.perception if self.stack is not None else None
+        ious = perceiver.ious if perceiver is not None else self.ious
+        inference = perceiver.inference_ms if perceiver is not None else self.inference_ms
         return {
             "track_id": self.track.track_id,
             "policy": self.policy_name,
@@ -267,14 +334,20 @@ class Simulator:
             "max_speed_mps": self.max_speed,
             "minimum_body_clearance_m": self.min_clearance if math.isfinite(self.min_clearance) else None,
             "boundary_violations": self.violations,
-            "synthetic_pavement_iou": float(np.mean(self.ious)) if self.ious else None,
-            "inference_p95_ms": float(np.percentile(self.inference_ms, 95)) if self.inference_ms else None,
-            "perception_frames": len(self.ious),
+            "perception": self.perception_spec if self.stack is not None else None,
+            "synthetic_pavement_iou": float(np.mean(ious)) if ious else None,
+            "inference_p95_ms": float(np.percentile(inference, 95)) if inference else None,
+            "perception_frames": len(ious),
             "timing": "lockstep; measured wall inference time is not injected as latency",
             "vehicle_parameters": asdict(self.vehicle_params),
             "camera_parameters": asdict(self.camera_params),
             "estimator": estimate_error_summary(self.log) if self.stack is not None else None,
             "stack_stop_reason": self.stack.stop_reason if self.stack is not None else None,
+            "stack_held_plans": self.stack.held_plans if self.stack is not None else None,
+            "model_plans": self.stack.model_plans if self.stack is not None else None,
+            "model_vetoes": self.stack.model_vetoes if self.stack is not None else None,
+            "model_corrections": self.stack.model_corrections if self.stack is not None else None,
+            "model_veto_reasons": dict(self.stack.model_veto_reasons) if self.stack is not None else None,
         }
 
 

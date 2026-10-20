@@ -7,11 +7,11 @@ vehicle:
   steer_max: 0.45          # rad at the front wheels
   steer_rate_max: 3.14     # rad/s
   steer_tau: 0.08          # s, first-order lag of the steering actuator
-  accel_max: 3.0           # m/s^2 at full throttle and low speed
-  v_max: 12.0              # m/s, speed where full throttle produces no acceleration
+  accel_max: 6.0           # m/s^2 at full throttle and low speed
+  v_max: 30.0              # m/s, speed where full throttle produces no acceleration (52 mph top speed with drag)
   brake_decel_max: 6.0     # m/s^2 at full brake
   rolling_decel: 0.3       # m/s^2 with both pedals released
-  drag: 0.004              # 1/m, decel = drag * v^2
+  drag: 0.002              # 1/m, decel = drag * v^2 (CdA 0.55 m^2 at 170 kg)
   gnss_noise: 0.02         # m, 1 sigma of the pose the harness feeds its controller
 
 # What the sensors report, as opposed to what is true (mcq_sim/sensors.py). The

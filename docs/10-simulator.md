@@ -41,6 +41,19 @@ The planner follows a minimum-curvature line through the pavement rather than th
 
 The IMU is modeled at the rear axle, the estimator's `base_link`. The dynamics report acceleration at the center of gravity 0.6 m ahead of it, and moving it back matters: skipping the lever-arm terms cost a metre per second squared of lateral error through steering transitions and drove position error to 0.27 m RMS before the filter lost the fix. Real hardware will mount the IMU somewhere else, and the sensor frames in the URDF (task G1) are where that offset will be measured.
 
+## Perception in the loop
+
+`--perception` chooses what the stack's planner drives between. `map` (the default) follows the track file. `oracle` gives it the true edges from the true pose, standing in for perfect perception. `camera-demo` or a `module:factory` renders the front camera, runs the model and turns its mask into left and right edge polylines in the kart's frame (`mcq_sim/perception.py`), which the planner's BOUNDARY mode consumes. The map is not consulted in that mode and the geofence check is skipped, because the point is to drive from what the camera sees; the estimator still supplies pose and speed.
+
+```sh
+.venv/bin/python -m mcq_sim evaluate --policy stack --perception oracle
+PYTHONPATH=training/perception:src/mcq_sim .venv/bin/python -m mcq_sim evaluate --policy stack --perception segmenter:create
+```
+
+Where the mask's pavement runs off the edge of the image the edge is reported at the image border. That is a safe underestimate, and it is why edge accuracy at close range depends on the field of view as much as on the model. Two things had to change in the planner before even the oracle could drive the Purdue hairpin: BOUNDARY mode builds its reference from the midpoint of the perceived edges, which there is a curve tighter than the kart can turn, so the stack low-passes that midline along its arc length and keeps the widest smoothing that stays inside the corridor (`smooth_boundary_reference`). Progress is also now measured on a windowed projection, since the KML centerline's radius is smaller than the corridor half width in that hairpin and a global nearest-point projection jumps there.
+
+The first perception model and how it is trained and scored are in [training/perception](../training/perception/README.md).
+
 ## Connect a model
 
 Create an importable Python module with a zero-argument factory:
@@ -70,3 +83,17 @@ The new environment uses 100 Hz steps with internal 400 Hz integration, a dynami
 Collect synchronized steering commands/feedback, pedals, speed, RTK rear-axle pose and IMU data across coastdown, braking, constant-radius turns and complete laps. Measure tire width, mass, CG, steering geometry, camera intrinsics/extrinsics and both pavement edges. Fit on some sessions, validate on separate sessions and conditions.
 
 Use the [replay contract](11-simulator-validation.md) to measure errors. A single "99% accurate" score is undefined until observable quantities, normalization and the operating envelope are fixed. All current reports explicitly retain `accuracy_validated: false`.
+
+## Live demo
+
+A page built for showing the model driving, not for engineering: a 3D chase camera over the Purdue orthophoto with a 3D kart, the track from above with the kart's path coloured by speed, and the model's own view with the line and speeds it chose. Any trained driving model (`training/perception/runs/drive-*`) can be picked live, next to the map-driven expert for comparison, and a session table keeps each run's result.
+
+```sh
+tools/sim_video/run_demo.sh                    # then open http://127.0.0.1:8766/demo
+tools/sim_video/run_demo.sh my-host.ts.net     # also answer on a tailnet name
+```
+
+Controls: start, reset, driver, speed cap, 1x/2x/4x simulation speed, four camera views (chase, cockpit, above, overview; drag to orbit, wheel to zoom), overlays, and "after a run" (stop, replay, or move to the next driver for an unattended demo). Space starts and pauses, R resets, 1 to 4 change the camera, F goes full screen.
+
+The simulator runs several times faster than real time on an idle machine and crawls on a busy one (a loaded laptop took 1 to 3 s per 0.1 s of simulated time), so stop training and searches before presenting. The 3D view loads three.js from cdnjs, so it needs a network; the map and the model's view work without one. The server is `mcq_sim view`; the page is `src/mcq_sim/mcq_sim/web/demo.html` and talks to `/api/demo/*`.
+

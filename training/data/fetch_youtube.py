@@ -110,7 +110,8 @@ def candidate_ok(entry: dict, src: Source) -> bool:
 # ---------------------------------------------------------------- yt-dlp wrappers
 
 def ytdlp() -> str:
-    exe = shutil.which("yt-dlp")
+    # also look beside the interpreter, so a venv's yt-dlp works without activating the venv
+    exe = shutil.which("yt-dlp") or shutil.which("yt-dlp", path=str(Path(sys.executable).parent))
     if exe is None:
         sys.exit("yt-dlp not found; pip install -r requirements.txt")
     return exe
