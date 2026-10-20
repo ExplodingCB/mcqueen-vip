@@ -38,7 +38,7 @@ It does not show that the model works on a real photograph. The appearance rando
 
 ## The driving model (2026-10)
 
-The segmenter above grew into a model that outputs a pavement mask, a racing line (12 waypoints, 2 to 24 m ahead, in the kart's frame) and a target speed at each. The stack drives that line through the controllers; the model never outputs steering or throttle. Version-by-version results, what each one measurably did and what none of it shows are in [docs/13](../../docs/13-driving-model-versions.md). The short version: drive-v5, camera only, laps the simulated Purdue track in 64.6 s with 0.39 m to the edge, and its pavement mask scores 0.84 IoU on held-out real kart footage (against auto-labels). Nothing here has seen the kart's own camera or driven a real kart.
+The segmenter above grew into a model that outputs a pavement mask, a racing line (12 waypoints, 2 to 24 m ahead, in the kart's frame) and a target speed at each. The stack drives that line through the controllers; the model never outputs steering or throttle. Version-by-version results, what each one measurably did and what none of it shows are in [docs/13](../../docs/13-driving-model-versions.md). The short version: drive-v5, camera only, laps the simulated Purdue track in 64.6 s with 0.39 m to the edge, and its pavement mask scores 0.84 IoU on held-out real kart footage (against auto-labels). Nothing here has seen the kart's own camera or driven a real kart. The trained weights are at https://huggingface.co/ExplodingCB2/mcqueen-driving-model (built and uploaded by `tools/hf/upload_model.py`).
 
 | File | What it is |
 | --- | --- |

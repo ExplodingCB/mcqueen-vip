@@ -1,6 +1,6 @@
 # Driving model: version log
 
-A running record of each model we trained to drive the Purdue Grand Prix track from a camera, what changed, and what it measurably did. Screenshots are in `docs/img/driving-model/`. Everything here is simulator evidence; no version has seen a real camera image or driven a real kart. See [what this does not show](#what-this-does-not-show).
+A running record of each model we trained to drive the Purdue Grand Prix track from a camera, what changed, and what it measurably did. Screenshots are in `docs/img/driving-model/`. The weights (drive-v5 and the checkpoints it came from) are published at https://huggingface.co/ExplodingCB2/mcqueen-driving-model, with the model card and a loader. Everything here is simulator evidence; no version has seen a real camera image or driven a real kart. See [what this does not show](#what-this-does-not-show).
 
 The rules every version is held to:
 
