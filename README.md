@@ -40,6 +40,10 @@ from a georeferenced Indiana orthophoto. These remain estimates pending an RTK s
 | [docs/09-work-queue.md](docs/09-work-queue.md) | Where the tree stands and the code that needs writing next, in lanes one person can own |
 | [docs/10-simulator.md](docs/10-simulator.md) | Visual Purdue simulator, camera-model interface and physics assumptions |
 | [docs/11-simulator-validation.md](docs/11-simulator-validation.md) | Measured telemetry replay and accuracy validation contract |
+| [docs/12-simulator-build-check.md](docs/12-simulator-build-check.md) | What was built and measured in the simulator, build by build |
+| [docs/13-driving-model-versions.md](docs/13-driving-model-versions.md) | The camera-driving model, version by version: what changed, what it measurably did, and what it does not show |
+| [docs/14-desktop-handoff.md](docs/14-desktop-handoff.md) | Moving the heavy training and search runs to a CUDA desktop (WSL2), with setup scripts in `tools/desktop/` |
+| [docs/15-demo-runbook.md](docs/15-demo-runbook.md) | Running the live demo (3D chase view, top-down map, the model's own view) and presenting it |
 
 ## The stack in one paragraph
 
