@@ -4,7 +4,9 @@ Kart model, Frenet planner prototype and the closed-loop harness. Runs on a lapt
 
 The new Purdue environment adds a visual viewer, dynamic tire/actuator model,
 front-camera segmentation interface and measured-log replay. Start with
-`python -m mcq_sim view --port 0`. See [the simulator guide](../../docs/10-simulator.md)
+`python -m mcq_sim view --port 0`. `--policy stack` drives that kart with the full
+software stack (sensors, estimator, planner, controllers) instead of a privileged
+baseline. See [the simulator guide](../../docs/10-simulator.md)
 and [track provenance](../../tracks/purdue_gp/README.md). This environment is
 uncalibrated; passing a simulated lap is not proof of real-kart accuracy.
 
@@ -28,6 +30,9 @@ python -m pytest -q src/mcq_sim/test
 | `vehicle.py` | Kinematic bicycle with understeer, steering actuator lag and rate limit, throttle and brake maps, drag |
 | `planner.py` | Frenet sampling planner: quintic offset candidates, boundary and obstacle checks, reachable speed profile, time and deviation cost, stop ramps, FOLLOW and BOUNDARY modes |
 | `ccontrol.py` | ctypes bindings to the C control core |
+| `dynamics.py`, `environment.py`, `camera.py` | The dynamic kart and the Purdue environment: tire, load transfer and actuator model, boundary and progress scoring, procedural front camera, reference and camera-demo drivers |
+| `stack.py` | The full stack on the dynamic kart: sensors, C estimator, planner, C controllers, with the estimate scored against the truth |
+| `reference.py` | Minimum-curvature line through a track's corridor, which the planner follows in place of a hand-drawn centerline |
 | `harness.py` | The loop: planner at 20 Hz, controller at 100 Hz, geofence, trajectory age and perception-disagreement checks, lap timing, csv log |
 | `sim_node.py` | The ROS 2 node: publishes `VehicleState`, `GatewayStatus`, `/gnss/fix`, `/gnss/fix_velocity`, `/imu/data_raw` and `/ego_truth`, emulates the gateway's mode machine, consumes `VehicleCommand` |
 | `planner_node.py` | The ROS 2 node around `planner.py`: `Trajectory` at 20 Hz and `GeofenceState` |
@@ -39,4 +44,4 @@ The exit condition of Phase 0 for the software (docs/05-roadmap.md) is `test/tes
 
 `sim_node` publishes the sensors, so the ROS 2 graph is what a state estimator will be written against: fixes arrive 80 ms late stamped when they were measured, the fix status follows `sensors.gnss.schedule`, and the IMU bias walks. The truth is on `/ego_truth` and nothing on the kart will ever publish it. While `publish_ego_state` is true the node also republishes that truth as `/ego_state`, which is what keeps the graph driving until `mcq_localization` exists; `ros2 launch mcq_bringup sim.launch.py ego_from_sim:=false` turns it off. Sensor scheduling runs on the ROS clock while the kart model integrates a fixed step, so under a loaded machine the two drift apart by however late the timer is.
 
-The pure-Python harness still feeds its controller `KartSim.measured_pose()`, the true pose with 2 cm of white noise on position and no latency. That is the last place in the repository that assumes localization nobody has to build, and it goes away with the state estimator.
+The pure-Python harness still feeds its controller `KartSim.measured_pose()`, the true pose with 2 cm of white noise on position and no latency. The dynamic environment's `stack` policy does not: it drives on the estimator's output alone, and `python -m mcq_sim evaluate --policy stack` is the way to see the whole software chain work. The harness keeps its kinematic model because the Phase 0 exit test and the estimator's scored fixtures depend on it. Moving `sim_node` onto the dynamic kart, so the ROS 2 graph sees the same physics, is the remaining join.

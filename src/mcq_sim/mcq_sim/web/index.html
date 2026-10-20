@@ -5,7 +5,7 @@
 <main>
 <section id="inputs">
 <h2>Inputs</h2>
-<label>Driver <select id="mode"><option value="reference">Reference</option><option value="manual">Manual</option><option value="camera-demo">Camera demo</option></select></label>
+<label>Driver <select id="mode"><option value="stack">Full stack</option><option value="reference">Reference</option><option value="manual">Manual</option><option value="camera-demo">Camera demo</option></select></label>
 <p><button id="play">Run</button> <button id="step">Step</button> <button id="reset">Reset</button></p>
 <label>Speed cap <output id="cap">4 m/s</output><input id="speed" type="range" min="1" max="8" step="0.5" value="4"></label>
 <fieldset id="manual" disabled><legend>Manual controls</legend>
@@ -30,6 +30,9 @@
 <tr><th>Lateral accel.</th><td id="lat">0 g</td></tr>
 <tr><th>Yaw rate</th><td id="yaw-rate">0 rad/s</td></tr>
 <tr><th>Min. clearance</th><td id="clearance">--</td></tr>
+<tr><th>Estimate error</th><td id="est-error">--</td></tr>
+<tr><th>Estimate σ</th><td id="est-sigma">--</td></tr>
+<tr><th>GNSS</th><td id="gnss">--</td></tr>
 <tr><th>Progress</th><td id="progress">0%</td></tr>
 <tr><th>Laps</th><td id="laps">0</td></tr>
 <tr><th>Violations</th><td id="violations">0</td></tr>

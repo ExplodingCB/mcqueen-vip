@@ -15,13 +15,14 @@ from __future__ import annotations
 import ctypes as C
 import os
 import subprocess
+import sys
 from functools import lru_cache
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CORE_DIR = REPO_ROOT / "src" / "mcq_localization" / "core"
 BUILD_DIR = CORE_DIR / "build"
-LIB_NAME = "libmcq_localization_core.so"
+LIB_NAME = "libmcq_localization_core.dylib" if sys.platform == "darwin" else "libmcq_localization_core.so"
 
 N = 8  # state elements, MCQ_EKF_N
 HISTORY = 64  # MCQ_EKF_HISTORY

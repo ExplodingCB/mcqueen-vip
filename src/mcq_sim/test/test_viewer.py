@@ -55,6 +55,20 @@ def test_manual_step_uses_commands_and_reset_clears_state(viewer):
     assert result["state"]["t"] == 0 and result["state"]["v"] == 0
 
 
+def test_full_stack_mode_reports_the_estimate_and_serves_the_reference(viewer):
+    result = post(viewer, {"action": "mode", "mode": "stack"})
+    assert result["report"]["policy"] == "stack"
+    assert result["estimate"] is None  # no fix yet
+    for _ in range(5):
+        result = post(viewer, {"action": "step"})
+    estimate = result["estimate"]
+    assert estimate["gnss"] == "FIXED"
+    assert estimate["position_error_m"] < 0.1
+    with urllib.request.urlopen(viewer + "/api/reference", timeout=30) as response:
+        line = json.load(response)["line"]
+    assert len(line) > 500
+
+
 def test_physics_slider_updates_report_and_resets(viewer):
     result = post(viewer, {"action": "parameter", "key": "friction", "value": 0.4})
     assert result["report"]["vehicle_parameters"]["friction"] == 0.4

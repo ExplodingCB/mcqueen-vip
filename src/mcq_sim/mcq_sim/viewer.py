@@ -65,6 +65,7 @@ def serve(sim: Simulator, port=8765):
                 else None,
                 "prediction_time_s": sim.last_frame_time,
                 "speed_cap": sim.speed_cap,
+                "estimate": sim.estimate_snapshot(),
             }
 
         def do_GET(self):
@@ -89,6 +90,11 @@ def serve(sim: Simulator, port=8765):
                         "vehicle": asdict(sim.vehicle_params),
                     }
                 )
+            if path == "/api/reference":
+                from mcq_sim.stack import reference_for
+
+                ref = reference_for(sim.track, sim.vehicle_params.half_width)
+                return self.send({"line": list(zip(ref.x.tolist(), ref.y.tolist(), strict=True))})
             if path == "/api/state":
                 return self.send(self.snapshot())
             if path == "/api/aerial.png" and sim.track.meta.get("aerial"):
@@ -134,7 +140,7 @@ def serve(sim: Simulator, port=8765):
                         running = False
                     elif action == "mode":
                         mode = data["mode"]
-                        if mode not in ("reference", "camera-demo", "manual", initial_policy):
+                        if mode not in ("reference", "camera-demo", "manual", "stack", initial_policy):
                             raise ValueError("unknown mode")
                         from mcq_sim.camera import DemoSegmenter
 
