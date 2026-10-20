@@ -10,6 +10,8 @@ Status: Phase 0 in progress. The design draft is in `docs/`; the code that exist
 
 The provisional Purdue simulator now runs locally with a visual viewer,
 camera-model interface and recorded-command replay. See [the simulator guide](docs/10-simulator.md).
+On Windows, install Python 3.10 or newer and double-click [start_sim.bat](start_sim.bat)
+to set up and start the visual simulator.
 Its 435.07 m centerline uses the user's refined KML, with pavement edges estimated
 from a georeferenced Indiana orthophoto. These remain estimates pending an RTK survey.
 

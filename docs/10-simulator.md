@@ -4,6 +4,28 @@ The first build tests a camera-to-pavement model followed by a separate geometri
 
 ## Run
 
+### Windows
+
+Install Python 3.10 or newer with the Python launcher or Python on PATH, then
+double-click `start_sim.bat` in the repository root. On first use, it creates
+`.venv` and installs the simulator dependencies (internet access required).
+Later launches reuse that environment. ROS 2 and Docker are not required.
+The launcher prefers Python 3.12 when available. If dependency installation fails
+with a newer Python, install 3.12 (`py install 3.12` with the Python install
+manager), rename `.venv` to an unused backup name, and run the launcher again.
+
+Open the localhost URL printed in the window to use the simulator. Keep the
+window open while driving; press Ctrl+C there to stop it. Setup errors remain
+visible so you can read them before closing the window.
+
+You can also launch from Command Prompt or PowerShell and pass viewer options:
+
+```powershell
+.\start_sim.bat --speed-cap 5 --policy camera-demo
+```
+
+### Linux / macOS
+
 From the repository root:
 
 ```sh
