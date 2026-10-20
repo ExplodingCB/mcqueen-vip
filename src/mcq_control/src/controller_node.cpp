@@ -16,16 +16,19 @@
 #include "mcq/longitudinal.h"
 #include "mcq/pure_pursuit.h"
 #include "mcq_msgs/msg/ego_state.hpp"
+#include "mcq_msgs/msg/geofence_state.hpp"
 #include "mcq_msgs/msg/trajectory.hpp"
 #include "mcq_msgs/msg/vehicle_command.hpp"
 #include "mcq_msgs/msg/vehicle_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+#include "replay_step.hpp"
 
 namespace mcq_control
 {
 
 using mcq_msgs::msg::EgoState;
+using mcq_msgs::msg::GeofenceState;
 using mcq_msgs::msg::Trajectory;
 using mcq_msgs::msg::VehicleCommand;
 using mcq_msgs::msg::VehicleState;
@@ -34,12 +37,13 @@ class ControllerNode : public rclcpp::Node
 {
 public:
   explicit ControllerNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("controller", options)
+  : rclcpp::Node("controller", options), replay_(*this)
   {
     const double rate_hz = declare_parameter<double>("rate_hz", 100.0);
     dt_ = static_cast<float>(1.0 / rate_hz);
     trajectory_max_age_ = declare_parameter<double>("trajectory_max_age", 0.2);
     ego_max_age_ = declare_parameter<double>("ego_max_age", 0.2);
+    geofence_max_age_ = declare_parameter<double>("geofence_max_age", 0.2);
 
     bike_.wheelbase = param("wheelbase", 1.05);
     bike_.understeer = param("understeer", 0.002);
@@ -75,7 +79,7 @@ public:
 
     // Best-effort, keep-last: a slow subscriber (the recorder, the pit link)
     // must never back-pressure the control loop. Freshness is checked by age.
-    const auto qos = rclcpp::SensorDataQoS();
+    const auto qos = replay_.qos();
     pub_ = create_publisher<VehicleCommand>("vehicle_command", qos);
     sub_traj_ = create_subscription<Trajectory>("trajectory", qos, [this](const Trajectory::SharedPtr msg) {
       if (!traj_) {
@@ -84,6 +88,7 @@ public:
           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
       }
       traj_ = msg;
+      replay_.received("trajectory", msg->header);
     });
     sub_ego_ = create_subscription<EgoState>("ego_state", qos, [this](const EgoState::SharedPtr msg) {
       if (!ego_) {
@@ -92,11 +97,24 @@ public:
           (now() - rclcpp::Time(msg->header.stamp)).seconds() * 1e3);
       }
       ego_ = msg;
+      replay_.received("ego_state", msg->header);
     });
+    sub_geofence_ = create_subscription<GeofenceState>(
+      "geofence_state", qos, [this](const GeofenceState::SharedPtr msg) {
+        geofence_ = msg;
+        replay_.received("geofence_state", msg->header);
+      });
     sub_vehicle_ = create_subscription<VehicleState>(
-      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) { vehicle_ = msg; });
-    timer_ = create_wall_timer(
-      std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(); });
+      "vehicle_state", qos, [this](const VehicleState::SharedPtr msg) {
+        vehicle_ = msg;
+        replay_.received("vehicle_state", msg->header);
+      });
+    if (replay_.enabled()) {
+      replay_.start([this](const rclcpp::Time & stamp) { tick(stamp); });
+    } else {
+      timer_ = create_wall_timer(
+        std::chrono::duration<double>(1.0 / rate_hz), [this]() { tick(this->now()); });
+    }
     RCLCPP_INFO(get_logger(), "controller running at %.0f Hz", rate_hz);
   }
 
@@ -134,18 +152,20 @@ private:
     a_t = pts.back().a;
   }
 
-  void tick()
+  void tick(const rclcpp::Time & now)
   {
-    const rclcpp::Time now = this->now();
     VehicleCommand cmd;
     cmd.header.stamp = now;
     cmd.header.frame_id = "base_link";
     cmd.heartbeat = heartbeat_++;
 
+    const bool auto_mode = vehicle_ && vehicle_->mode == VehicleState::MODE_AUTO;
     if (!traj_ || !ego_ || traj_->points.size() < 2) {
-      // Nothing to track yet: hold with no authority, the gateway stays in RC.
+      // Hold with no axis authority in RC. The real gateway also honors Jetson
+      // stop requests in RC, so only AUTO missing inputs request urgent stop.
       cmd.lat_enable = false;
       cmd.long_enable = false;
+      cmd.request_urgent_stop = auto_mode;
       pub_->publish(cmd);
       return;
     }
@@ -153,18 +173,20 @@ private:
     const double traj_age = (now - rclcpp::Time(traj_->header.stamp)).seconds();
     const double ego_age = (now - rclcpp::Time(ego_->header.stamp)).seconds();
     const bool stale = traj_age > trajectory_max_age_ || ego_age > ego_max_age_;
+    const double geofence_age = geofence_ ? (now - rclcpp::Time(geofence_->header.stamp)).seconds() : 1e9;
+    const bool geofence_stop = !geofence_ || geofence_->violation ||
+      geofence_age > geofence_max_age_ || geofence_age < -.05;
     // The Jetson-side checks apply while the Jetson is driving. In RC the
     // gateway ignores these commands anyway, and a stop request would brake a
     // human's drive out of the pit for a startup hiccup.
-    const bool auto_mode = vehicle_ && vehicle_->mode == VehicleState::MODE_AUTO;
-    const bool request_stop = stale && auto_mode;
+    const bool request_stop = (stale || geofence_stop) && auto_mode;
     if (request_stop && !was_stale_) {
       RCLCPP_WARN(
-        get_logger(), "stale inputs (trajectory %.0f ms, ego %.0f ms): requesting urgent stop",
-        traj_age * 1e3, ego_age * 1e3);
+        get_logger(), "unsafe inputs (trajectory %.0f ms, ego %.0f ms, geofence stop %d): requesting urgent stop",
+        traj_age * 1e3, ego_age * 1e3, static_cast<int>(geofence_stop));
     }
     was_stale_ = request_stop;
-    const bool stop = traj_->stop_requested || stale;
+    const bool stop = traj_->stop_requested || stale || geofence_stop;
 
     const float x = static_cast<float>(ego_->pose.position.x);
     const float y = static_cast<float>(ego_->pose.position.y);
@@ -209,15 +231,17 @@ private:
     cmd.steering_angle = steer;
     cmd.throttle = throttle;
     cmd.brake = brake;
-    cmd.lat_enable = true;
-    cmd.long_enable = true;
+    cmd.lat_enable = !geofence_stop;
+    cmd.long_enable = !geofence_stop;
     cmd.request_urgent_stop = request_stop;
     pub_->publish(cmd);
   }
 
+  mcq_replay::ReplayStep replay_;
   float dt_{0.01f};
   double trajectory_max_age_{0.2};
   double ego_max_age_{0.1};
+  double geofence_max_age_{0.2};
   mcq_bicycle_params_t bike_{};
   mcq_pure_pursuit_params_t pp_{};
   mcq_lateral_limits_t lim_{};
@@ -232,10 +256,12 @@ private:
 
   Trajectory::SharedPtr traj_;
   EgoState::SharedPtr ego_;
+  GeofenceState::SharedPtr geofence_;
   VehicleState::SharedPtr vehicle_;
   rclcpp::Publisher<VehicleCommand>::SharedPtr pub_;
   rclcpp::Subscription<Trajectory>::SharedPtr sub_traj_;
   rclcpp::Subscription<EgoState>::SharedPtr sub_ego_;
+  rclcpp::Subscription<GeofenceState>::SharedPtr sub_geofence_;
   rclcpp::Subscription<VehicleState>::SharedPtr sub_vehicle_;
   rclcpp::TimerBase::SharedPtr timer_;
 };

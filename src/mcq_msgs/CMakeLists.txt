@@ -7,6 +7,8 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 set(msg_files
+  "msg/PlannerStatus.msg"
+  "msg/Telemetry.msg"
   "msg/VehicleState.msg"
   "msg/VehicleCommand.msg"
   "msg/GatewayStatus.msg"

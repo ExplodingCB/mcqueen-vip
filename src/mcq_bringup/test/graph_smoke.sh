@@ -28,7 +28,7 @@ fi
 ( timeout 14 ros2 topic hz /vehicle_command --window 100 > "hz_cmd_$label.txt" 2>&1 ) &
 ( timeout 14 ros2 topic hz /trajectory --window 20 > "hz_traj_$label.txt" 2>&1 ) &
 ( sleep 9; top -b -n 1 -o %CPU | head -25 > "top_$label.txt" 2>&1 ) &
-timeout 130 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 110 &
+timeout 130 ros2 run mcq_bringup check_graph.py --distance 120 --speed 3 --timeout 110 --report "metrics_$label.json" &
 checker_pid=$!
 sleep 3
 

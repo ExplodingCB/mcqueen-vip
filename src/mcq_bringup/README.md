@@ -15,3 +15,11 @@ The simulator publishes the kart's sensors (`/gnss/fix` at 20 Hz and 80 ms late,
 The simulator's emulated gateway starts in `RC` and hands over to `AUTO` once the heartbeat has been continuous for a second plus `handover_delay` (2 s), the way the real gateway waits for the operator's switch, so the graph has settled before the kart moves. `check_graph.py` counts urgent stop requests only once the kart is moving; a stop request during startup is not an intervention on the kart either, because `AUTO` needs a second of clean heartbeat and the operator's switch. The smoke script starts the checker before the graph: a participant joining mid-run freezes the rclpy nodes for a few hundred milliseconds, which the controller's freshness check treats as the fault it is (docs/02-architecture.md section 4).
 
 Kart launch files (`kart.launch.py` with the gateway bridge, GNSS and IMU drivers and the state estimator) arrive with Phase 1.
+
+## Pit telemetry
+
+`ros2 launch mcq_bringup sim.launch.py telemetry:=true handover_delay:=60.0`
+starts the 10 Hz telemetry observer and Foxglove bridge. Connect and load layouts
+before the simulated AUTO handover; the delay is not a readiness interlock. See
+[mcq_telemetry](../mcq_telemetry/README.md) for the second-machine walkthrough,
+the DDS discovery warning, and full-run dashboard comparison.

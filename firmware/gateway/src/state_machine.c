@@ -164,11 +164,16 @@ void gw_step(gw_t * gw, const gw_inputs_t * in)
   (void)gw_limit_speed(1.0f, in->speed, &faults);
   (void)gw_limit_power(1.0f, in->motor_power, &faults);
 
-  bool tx_reset_edge = in->tx_reset && !gw->prev_tx_reset;
+  bool tx_reset_edge = in->rc_link_ok && in->tx_reset && !gw->prev_tx_reset;
   bool manual_reset_edge = in->manual_reset && !gw->prev_manual_reset;
-  gw->prev_tx_reset = in->tx_reset;
+  // Preserve the last trustworthy reset level across receiver loss.
+  if (in->rc_link_ok) {
+    gw->prev_tx_reset = in->tx_reset;
+  }
   gw->prev_manual_reset = in->manual_reset;
-  if (!in->tx_auto_switch) {
+  if (!in->rc_link_ok) {
+    gw->auto_switch_armed = false;
+  } else if (!in->tx_auto_switch) {
     gw->auto_switch_armed = true;
   }
   track_standstill(gw, in);
@@ -177,7 +182,11 @@ void gw_step(gw_t * gw, const gw_inputs_t * in)
   switch (gw->mode) {
     case GW_MODE_INIT:
       if (in->self_test_ok) {
-        gw->mode = GW_MODE_RC;
+        if ((faults & GW_FAULTS_STOPPING) != 0u) {
+          enter_urgent_stop(gw, in, faults);
+        } else {
+          gw->mode = GW_MODE_RC;
+        }
       } else {
         faults |= GW_FAULT_SELF_TEST;
         gw->mode = GW_MODE_FAULT;
@@ -196,10 +205,10 @@ void gw_step(gw_t * gw, const gw_inputs_t * in)
       }
       break;
     case GW_MODE_AUTO:
-      if (!in->tx_auto_switch) {
-        gw->mode = GW_MODE_RC;
-      } else if ((faults & GW_FAULTS_STOPPING) != 0u) {
+      if ((faults & GW_FAULTS_STOPPING) != 0u) {
         enter_urgent_stop(gw, in, faults);
+      } else if (!in->tx_auto_switch) {
+        gw->mode = GW_MODE_RC;
       }
       break;
     case GW_MODE_URGENT_STOP:
@@ -209,7 +218,7 @@ void gw_step(gw_t * gw, const gw_inputs_t * in)
       if (gw->standstill) {
         if (gw->urgent_from_estop) {
           gw->mode = GW_MODE_DRIVETRAIN_OFF;
-        } else if (tx_reset_edge) {
+        } else if (tx_reset_edge && (faults & GW_FAULTS_STOPPING) == 0u) {
           gw->mode = GW_MODE_RC;
           gw->out.latched = 0u;
         } else if (

@@ -1,0 +1,272 @@
+{
+  "configById": {
+    "Indicator!mcq1": {
+      "title": "Gateway mode",
+      "path": "/telemetry/summary.gateway_mode",
+      "style": "background",
+      "fontSize": 24,
+      "rules": [
+        {
+          "rawValue": "AUTO",
+          "operator": "=",
+          "color": "#15803d",
+          "label": "AUTO"
+        },
+        {
+          "rawValue": "RC",
+          "operator": "=",
+          "color": "#b45309",
+          "label": "RC"
+        },
+        {
+          "rawValue": "URGENT_STOP",
+          "operator": "=",
+          "color": "#b91c1c",
+          "label": "URGENT STOP"
+        },
+        {
+          "rawValue": "FAULT",
+          "operator": "=",
+          "color": "#b91c1c",
+          "label": "FAULT"
+        },
+        {
+          "rawValue": "INIT",
+          "operator": "=",
+          "color": "#b45309",
+          "label": "INIT"
+        },
+        {
+          "rawValue": "DRIVETRAIN_OFF",
+          "operator": "=",
+          "color": "#b45309",
+          "label": "DRIVETRAIN OFF"
+        }
+      ],
+      "fallbackColor": "#b91c1c",
+      "fallbackLabel": "UNKNOWN / STALE"
+    },
+    "Indicator!mcq2": {
+      "title": "GNSS",
+      "path": "/telemetry/summary.gnss_status",
+      "style": "background",
+      "fontSize": 24,
+      "rules": [
+        {
+          "rawValue": "FIXED",
+          "operator": "=",
+          "color": "#15803d",
+          "label": "RTK FIXED"
+        },
+        {
+          "rawValue": "FLOAT",
+          "operator": "=",
+          "color": "#b45309",
+          "label": "RTK FLOAT"
+        },
+        {
+          "rawValue": "NONE",
+          "operator": "=",
+          "color": "#b91c1c",
+          "label": "NO FIX"
+        }
+      ],
+      "fallbackColor": "#b91c1c",
+      "fallbackLabel": "UNKNOWN / STALE"
+    },
+    "StateTransitions!mcq3": {
+      "title": "Mode and fault flags",
+      "paths": [
+        {
+          "value": "/telemetry/summary.submode",
+          "label": "submode",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.active_faults",
+          "label": "Active faults",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.latched_faults",
+          "label": "Latched faults",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.urgent_stop",
+          "label": "urgent_stop",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "isSynced": true,
+      "xAxisRange": 30,
+      "timeWindowMode": "sliding"
+    },
+    "Plot!mcq4": {
+      "title": "Speed / target / applied cap",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Actual",
+          "value": "/telemetry/summary.speed",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Target",
+          "value": "/telemetry/summary.target_speed",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Cap",
+          "value": "/telemetry/summary.speed_cap",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m/s",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq5": {
+      "title": "Lateral deviation",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Deviation",
+          "value": "/telemetry/summary.lateral_deviation",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m",
+      "followingViewWidth": 30
+    },
+    "StateTransitions!mcq6": {
+      "title": "Input freshness \u2014 all must be true",
+      "paths": [
+        {
+          "value": "/telemetry/summary.ego_valid",
+          "label": "ego_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.trajectory_valid",
+          "label": "trajectory_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.gateway_valid",
+          "label": "gateway_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.planner_valid",
+          "label": "planner_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.command_valid",
+          "label": "command_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "isSynced": true,
+      "xAxisRange": 30,
+      "timeWindowMode": "sliding"
+    },
+    "RawMessages!mcq7": {
+      "title": "Laps completed",
+      "defaultExpanded": true,
+      "topicPath": "/telemetry/summary.completed_laps",
+      "fontSize": 16
+    },
+    "RawMessages!mcq8": {
+      "title": "Current lap (s)",
+      "defaultExpanded": true,
+      "topicPath": "/telemetry/summary.current_lap_time",
+      "fontSize": 16
+    },
+    "RawMessages!mcq9": {
+      "title": "Last lap (s)",
+      "defaultExpanded": true,
+      "topicPath": "/telemetry/summary.last_lap_time",
+      "fontSize": 16
+    },
+    "RawMessages!mcq10": {
+      "title": "Best lap (s)",
+      "defaultExpanded": true,
+      "topicPath": "/telemetry/summary.best_lap_time",
+      "fontSize": 16
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "linkedGlobalVariables": [],
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "Indicator!mcq1",
+      "second": {
+        "direction": "column",
+        "first": "Indicator!mcq2",
+        "second": "StateTransitions!mcq3",
+        "splitPercentage": 50.0
+      },
+      "splitPercentage": 33.333333333333336
+    },
+    "second": {
+      "direction": "row",
+      "first": {
+        "direction": "column",
+        "first": "Plot!mcq4",
+        "second": {
+          "direction": "column",
+          "first": "Plot!mcq5",
+          "second": "StateTransitions!mcq6",
+          "splitPercentage": 50.0
+        },
+        "splitPercentage": 33.333333333333336
+      },
+      "second": {
+        "direction": "column",
+        "first": "RawMessages!mcq7",
+        "second": {
+          "direction": "column",
+          "first": "RawMessages!mcq8",
+          "second": {
+            "direction": "column",
+            "first": "RawMessages!mcq9",
+            "second": "RawMessages!mcq10",
+            "splitPercentage": 50.0
+          },
+          "splitPercentage": 33.333333333333336
+        },
+        "splitPercentage": 25.0
+      },
+      "splitPercentage": 50.0
+    },
+    "splitPercentage": 33.333333333333336
+  }
+}

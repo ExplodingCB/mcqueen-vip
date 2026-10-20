@@ -1,0 +1,5 @@
+track_server:
+  ros__parameters:
+    geofence_margin: 0.5
+    position_variance_max: 0.25  # m^2, largest eigenvalue of the map x/y covariance
+    ego_max_age: 0.2

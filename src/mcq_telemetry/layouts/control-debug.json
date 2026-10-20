@@ -1,0 +1,259 @@
+{
+  "configById": {
+    "Plot!mcq1": {
+      "title": "Speed / target / applied cap",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Actual",
+          "value": "/telemetry/summary.speed",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Target",
+          "value": "/telemetry/summary.target_speed",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Cap",
+          "value": "/telemetry/summary.speed_cap",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m/s",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq2": {
+      "title": "Speed error",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Actual - target",
+          "value": "/telemetry/summary.speed_error",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "m/s",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq3": {
+      "title": "Steering command / feedback",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Command",
+          "value": "/vehicle_command.steering_angle",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Feedback",
+          "value": "/vehicle_state.steering_angle",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "rad",
+      "followingViewWidth": 30
+    },
+    "Plot!mcq4": {
+      "title": "Throttle / brake",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Throttle",
+          "value": "/vehicle_command.throttle",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Brake",
+          "value": "/vehicle_command.brake",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "",
+      "followingViewWidth": 30
+    },
+    "StateTransitions!mcq5": {
+      "title": "Mode / cap source / stop / faults",
+      "paths": [
+        {
+          "value": "/telemetry/summary.gateway_mode",
+          "label": "gateway_mode",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.submode",
+          "label": "submode",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.urgent_stop",
+          "label": "urgent_stop",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.active_faults",
+          "label": "Active faults",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "isSynced": true,
+      "xAxisRange": 30,
+      "timeWindowMode": "sliding"
+    },
+    "StateTransitions!mcq6": {
+      "title": "Input freshness \u2014 all must be true",
+      "paths": [
+        {
+          "value": "/telemetry/summary.ego_valid",
+          "label": "ego_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.trajectory_valid",
+          "label": "trajectory_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.gateway_valid",
+          "label": "gateway_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.planner_valid",
+          "label": "planner_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "value": "/telemetry/summary.command_valid",
+          "label": "command_valid",
+          "enabled": true,
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "isSynced": true,
+      "xAxisRange": 30,
+      "timeWindowMode": "sliding"
+    },
+    "Plot!mcq7": {
+      "title": "Input ages",
+      "paths": [
+        {
+          "enabled": true,
+          "label": "Ego",
+          "value": "/telemetry/summary.ego_age",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Trajectory",
+          "value": "/telemetry/summary.trajectory_age",
+          "timestampMethod": "headerStamp"
+        },
+        {
+          "enabled": true,
+          "label": "Gateway",
+          "value": "/telemetry/summary.gateway_age",
+          "timestampMethod": "headerStamp"
+        }
+      ],
+      "showLegend": true,
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "timeWindowMode": "sliding",
+      "yAxisLabel": "s",
+      "followingViewWidth": 30
+    },
+    "RawMessages!mcq8": {
+      "title": "Trajectory",
+      "defaultExpanded": true,
+      "topicPath": "/trajectory",
+      "fontSize": 16
+    },
+    "RawMessages!mcq9": {
+      "title": "Gateway fault bits and latch",
+      "defaultExpanded": true,
+      "topicPath": "/gateway_status",
+      "fontSize": 16
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "linkedGlobalVariables": [],
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "Plot!mcq1",
+      "second": {
+        "direction": "column",
+        "first": "Plot!mcq2",
+        "second": "Plot!mcq3",
+        "splitPercentage": 50.0
+      },
+      "splitPercentage": 33.333333333333336
+    },
+    "second": {
+      "direction": "row",
+      "first": {
+        "direction": "column",
+        "first": "Plot!mcq4",
+        "second": {
+          "direction": "column",
+          "first": "StateTransitions!mcq5",
+          "second": "StateTransitions!mcq6",
+          "splitPercentage": 50.0
+        },
+        "splitPercentage": 33.333333333333336
+      },
+      "second": {
+        "direction": "column",
+        "first": "Plot!mcq7",
+        "second": {
+          "direction": "column",
+          "first": "RawMessages!mcq8",
+          "second": "RawMessages!mcq9",
+          "splitPercentage": 50.0
+        },
+        "splitPercentage": 33.333333333333336
+      },
+      "splitPercentage": 50.0
+    },
+    "splitPercentage": 33.333333333333336
+  }
+}
