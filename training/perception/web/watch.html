@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Training watch</title>
 <style>
-:root{--bg:#f6f6f3;--panel:#fff;--ink:#1c1d1f;--mute:#6b6f76;--line:#e2e2dc;--grid:#ececE6;--c0:#2a6fdb;--c1:#d9531e;--c2:#1f9d6b;--c3:#8a4fd0;--good:#1f9d6b;--warn:#c98a00;--bad:#c2372b}
-@media (prefers-color-scheme:dark){:root{--bg:#141517;--panel:#1c1e21;--ink:#ececea;--mute:#9a9ea6;--line:#2c2f34;--grid:#25282c;--c0:#6ea2ff;--c1:#ff8a5c;--c2:#4cd39b;--c3:#b98cf0;--good:#4cd39b;--warn:#e3b341;--bad:#ff7b6e}}
+:root{--bg:#f6f6f3;--panel:#fff;--ink:#1c1d1f;--mute:#6b6f76;--line:#e2e2dc;--grid:#ececE6;--c0:#2a6fdb;--c1:#d9531e;--c2:#1f9d6b;--c3:#8a4fd0;--c4:#c98a00;--good:#1f9d6b;--warn:#c98a00;--bad:#c2372b}
+@media (prefers-color-scheme:dark){:root{--bg:#141517;--panel:#1c1e21;--ink:#ececea;--mute:#9a9ea6;--line:#2c2f34;--grid:#25282c;--c0:#6ea2ff;--c1:#ff8a5c;--c2:#4cd39b;--c3:#b98cf0;--c4:#e3b341;--good:#4cd39b;--warn:#e3b341;--bad:#ff7b6e}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,sans-serif}
 main{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
@@ -22,18 +22,32 @@ h1{font-size:20px;margin:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .card b{display:block;font-size:22px;font-variant-numeric:tabular-nums;font-weight:600}
 .card span{color:var(--mute);font-size:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:14px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
 .panel h2{font-size:14px;margin:0 0 2px}
 .panel p{margin:0 0 8px;color:var(--mute);font-size:12px}
 .tools{float:right;font-size:12px;color:var(--mute)}
 .tools label{cursor:pointer}
-canvas{width:100%;height:300px;display:block}
+canvas{width:100%;height:240px;display:block}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}
 th,td{text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--mute);font-weight:500}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);display:none;font-variant-numeric:tabular-nums}
 .empty{color:var(--mute);padding:40px 0;text-align:center}
+.drive{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 12px;font-size:13px}
+.drive select,.drive button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+.drive button{cursor:pointer;background:var(--c0);color:#fff;border-color:transparent}
+.drive button:disabled{opacity:.5;cursor:default}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);cursor:zoom-in}
+.shot.ok{border-top:3px solid var(--good)}.shot.bad{border-top:3px solid var(--bad)}
+.shot img{width:100%;display:block;background:#d7d7d2}
+.shot div{padding:7px 10px;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.shot b{color:var(--ink);font-weight:600}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+#lightbox img{max-width:94vw;max-height:94vh;border-radius:8px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}.gallery{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -41,34 +55,61 @@ th{color:var(--mute);font-weight:500}
 <header><h1>Training watch</h1><div class="sub" id="stamp">connecting…</div></header>
 <div class="runs" id="runs"></div>
 <div class="cards" id="cards"></div>
-<section class="panel">
-<span class="tools"><label><input type="checkbox" id="log" checked> log scale</label></span>
-<h2>Training loss</h2><p>BCE plus Dice. Faint line: every 10 steps. Dots: epoch mean.</p>
-<canvas id="loss"></canvas>
+<section class="panel" id="lapsec">
+<h2>Lap plots</h2>
+<p>Pictures from the models. Lap plots: a model driving the whole stack from the camera, seen from above: the track, the minimum-curvature reference, the path driven coloured by speed, the lines the model chose (orange), and where the safety check vetoed it (red x). Green edge: lap completed. Red edge: it stopped. Real-footage sheets: the model's pavement mask on real kart onboard frames (magenta agrees with the label, red is pavement the label does not have, blue is pavement the model missed).</p>
+<div class="drive">
+<select id="plotrun"></select>
+<select id="plotcap"><option>4</option><option selected>6</option><option>8</option><option>10</option><option>12</option></select>
+<label><input type="checkbox" id="plotrace"> race limits</label>
+<button id="plotgo">Drive a lap and plot</button><span class="sub" id="plotstate"></span>
+</div>
+<div class="gallery" id="gallery"></div>
 </section>
-<section class="panel">
-<h2>Validation IoU</h2><p>Pavement IoU on tracks the model never trains on, one point per epoch. Dashed line: the 0.95 target from docs/08 section 7 (held-out real footage, not this).</p>
-<canvas id="iou"></canvas>
-</section>
+<div id="lightbox"><img id="lightimg" alt=""></div>
+<div class="grid2" id="panels"></div>
 <section class="panel"><h2>Epochs</h2><p id="tablenote"></p><table id="table"></table></section>
 </main>
 <div id="tip"></div>
 <script>
-const COLORS=['--c0','--c1','--c2','--c3'];
-let runs=[],hidden=new Set(),hover=null;
+const COLORS=['--c0','--c1','--c2','--c3','--c4'];
+// Every chart is one of these. `get` reads a value off an epoch row; `lower` marks
+// metrics where smaller is better; `refs` are dashed reference lines.
+const METRICS=[
+  {id:'lap',title:'Best lap time (s)',note:'Slowest of the two worlds (nominal kart, sloppier kart), on pavement 0.25 m narrower than the track file. Dashed: one minute.',epoch:'best_lap_s',lower:true,refs:[{y:60,label:'60 s'}]},
+  {id:'finish',title:'Candidates that finish the lap (fraction)',note:'Of each generation, how many laps complete without leaving the pavement.',epoch:'finished_fraction'},
+  {id:'clear',title:'Best line edge clearance (m)',note:'Closest the best line comes to the pavement edge, in either world. Goal: 0.25 m.',epoch:'best_clearance_m',refs:[{y:0.25,label:'goal 0.25'}]},
+  {id:'loss',title:'Training loss',note:'Faint line: every few steps. Dots: epoch mean.',steps:'loss',epoch:'train_loss',lower:true,log:true},
+  {id:'near',title:'Racing-line error, 2 to 10 m ahead (m)',note:'Mean distance from the expert line on frames never trained on. This is what steering follows. Dashed: a model that ignores the image (1.34 m).',epoch:'line_error_near_m',lower:true,refs:[{y:1.34,label:'blind 1.34'},{y:0.3,label:'target 0.3'}]},
+  {id:'far',title:'Racing-line error, 12 to 24 m ahead (m)',note:'Where the corners are and how they bend. Dashed: blind guess (6.78 m).',epoch:'line_error_far_m',lower:true,refs:[{y:6.78,label:'blind 6.78'}]},
+  {id:'speed',title:'Target-speed error (m/s)',note:'How far its speed request is from the expert. Dashed: blind guess (2.14 m/s).',epoch:'speed_error_mps',lower:true,refs:[{y:2.14,label:'blind 2.14'}]},
+  {id:'real',title:'Real-footage mask IoU (held-out videos)',note:'Pavement mask on real kart onboard frames from videos the model never trained on, against auto-labels. Dashed: the blind guess (lower part of the picture is road) scores 0.47.',epoch:'real_val_iou',refs:[{y:0.47,label:'blind 0.47'}]},
+  {id:'iou',title:'Pavement mask IoU',note:'Pavement mask on unseen frames. Dashed: 0.95.',epoch:'val_iou',refs:[{y:0.95,label:'0.95'}]},
+];
+let runs=[],hidden=new Set(),hover=null,logScale=true;
 const $=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtT=s=>s==null?'–':s<90?Math.round(s)+' s':(s/60).toFixed(1)+' min';
 const colorOf=i=>css(COLORS[i%COLORS.length]);
+const num=v=>typeof v==='number'&&isFinite(v);
 
 async function poll(){
-  try{
-    runs=await (await fetch('/api/runs',{cache:'no-store'})).json();
-    $('stamp').textContent='updated '+new Date().toLocaleTimeString();
-  }catch(e){$('stamp').textContent='server not reachable';}
+  try{runs=await (await fetch('/api/runs',{cache:'no-store'})).json();$('stamp').textContent='updated '+new Date().toLocaleTimeString();}
+  catch(e){$('stamp').textContent='server not reachable';}
   render();
 }
+function series(r,m){
+  const per=r.steps_per_epoch;
+  const raw=m.steps&&per?r.steps.filter(s=>num(s[m.steps])).map(s=>({x:s.step/per,y:s[m.steps]})):[];
+  const pts=r.epochs.filter(e=>num(e[m.epoch])).map(e=>({x:e.epoch,y:e[m.epoch],epoch:e.epoch}));
+  return {raw,pts};
+}
+let seeded=false;
 function render(){
+  if(!seeded&&runs.length){ // first load: show only runs of the kind most recently active
+    seeded=true;const newest=runs.reduce((a,b)=>b.updated_s_ago<a.updated_s_ago?b:a);
+    runs.forEach(r=>{if(r.kind!==newest.kind)hidden.add(r.name);});
+  }
   const chips=$('runs');chips.innerHTML='';
   runs.forEach((r,i)=>{
     const c=document.createElement('div');c.className='chip'+(hidden.has(r.name)?' off':'');
@@ -76,110 +117,147 @@ function render(){
     c.onclick=()=>{hidden.has(r.name)?hidden.delete(r.name):hidden.add(r.name);render();};
     chips.append(c);
   });
-  const shown=runs.filter(r=>!hidden.has(r.name));
-  cards(shown.length?shown[shown.length-1]:null);
-  chart($('loss'),shown,'loss');chart($('iou'),shown,'iou');table(shown);
+  const shown=runs.map((r,i)=>({r,i})).filter(a=>!hidden.has(a.r.name));
+  const latest=shown.length?shown.map(a=>a.r).reduce((a,b)=>b.updated_s_ago<a.updated_s_ago?b:a):null;
+  cards(latest);
+  const box=$('panels');
+  const wanted=METRICS.filter(m=>shown.some(a=>series(a.r,m).pts.length||series(a.r,m).raw.length));
+  if(box.dataset.ids!==wanted.map(m=>m.id).join()){
+    box.dataset.ids=wanted.map(m=>m.id).join();
+    box.innerHTML=wanted.map(m=>`<section class="panel">${m.log?'<span class="tools"><label><input type="checkbox" class="logbox" checked> log scale</label></span>':''}<h2>${m.title}</h2><p>${m.note}</p><canvas id="c_${m.id}"></canvas></section>`).join('');
+    box.querySelectorAll('.logbox').forEach(b=>b.onchange=e=>{logScale=e.target.checked;render();});
+    wanted.forEach(m=>wire($('c_'+m.id),m));
+  }
+  wanted.forEach(m=>chart($('c_'+m.id),shown,m));
+  table(latest);
 }
 function cards(r){
   const el=$('cards');
-  if(!r){el.innerHTML='<div class="empty">No runs yet. Start one with train.py.</div>';return}
-  const e=r.epochs,last=e[e.length-1],steps=r.steps,lastStep=steps[steps.length-1];
-  const best=e.length?Math.max(...e.map(x=>x.val_iou)):null;
-  const loss=lastStep?lastStep.loss:last?last.train_loss:null;
-  const items=[
-    [r.status,'run '+r.name],
-    [e.length+' / '+(r.total_epochs??'?'),'epochs done'],
-    [loss==null?'–':loss.toFixed(4),'latest training loss'],
-    [last?last.val_iou.toFixed(4):'–','latest validation IoU'],
-    [best==null?'–':best.toFixed(4),'best validation IoU'],
-    [r.status==='running'?fmtT(r.eta_s):fmtT(last?.t),r.status==='running'?'estimated time left':'training time']
-  ];
+  if(!r){el.innerHTML='<div class="empty">No runs yet. Start one with train.py or train_drive.py.</div>';return}
+  const e=r.epochs,last=e[e.length-1],lastStep=r.steps[r.steps.length-1];
+  const items=[[r.status,'run '+r.name+(r.kind?' ('+r.kind+')':'')],[e.length+' / '+(r.total_epochs??'?'),'epochs done']];
+  if(r.kind==='optimizer'){
+    const laps=e.map(x=>x.best_lap_s).filter(num);
+    items.push([laps.length?Math.min(...laps).toFixed(1)+' s':'none yet','best lap (slowest world)'],
+               [last?Math.round(last.finished_fraction*100)+'%':'–','candidates finishing'],
+               [last&&num(last.best_clearance_m)?last.best_clearance_m.toFixed(2)+' m':'–','best edge clearance'],
+               [last?last.sigma.toFixed(2):'–','search step (sigma)']);
+  }else if(r.kind==='drive'){
+    const bestNear=e.length?Math.min(...e.map(x=>x.line_error_near_m)):null;
+    items.push([last?last.line_error_near_m.toFixed(2)+' m':'–','line error near (latest)'],
+               [bestNear==null?'–':bestNear.toFixed(2)+' m','best line error near'],
+               [last?last.line_error_far_m.toFixed(2)+' m':'–','line error far'],
+               [last?last.speed_error_mps.toFixed(2)+' m/s':'–','speed error']);
+  }else{
+    const loss=lastStep?lastStep.loss:last?last.train_loss:null,best=e.length?Math.max(...e.map(x=>x.val_iou)):null;
+    items.push([loss==null?'–':loss.toFixed(4),'latest training loss'],[last?last.val_iou.toFixed(4):'–','latest validation IoU'],[best==null?'–':best.toFixed(4),'best validation IoU']);
+  }
+  items.push([r.status==='running'?fmtT(r.eta_s):fmtT(last?.t),r.status==='running'?'estimated time left':'training time']);
   el.innerHTML=items.map(([b,s])=>`<div class="card"><b>${b}</b><span>${s}</span></div>`).join('');
 }
-function table(shown){
-  const r=shown[shown.length-1];
+function table(r){
   if(!r){$('table').innerHTML='';return}
-  $('tablenote').textContent=r.name+(r.parameters?' · '+(r.parameters/1e6).toFixed(2)+' M parameters · '+r.device:'');
-  $('table').innerHTML='<tr><th>Epoch</th><th>Train loss</th><th>Val IoU</th><th>Elapsed</th></tr>'+
-    r.epochs.slice().reverse().map(e=>`<tr><td>${e.epoch}</td><td>${e.train_loss.toFixed(4)}</td><td>${e.val_iou.toFixed(4)}</td><td>${fmtT(e.t)}</td></tr>`).join('');
+  const a=r.args||{},bits=[];
+  if(r.parameters)bits.push((r.parameters/1e6).toFixed(2)+' M parameters');
+  if(r.device)bits.push(r.device);
+  if(a.fine==='True'||a.fine===true)bits.push('fine driving head');
+  if(a.corner_weight&&+a.corner_weight>0)bits.push('corner weight '+a.corner_weight);
+  if(a.init&&a.init!=='None')bits.push('init '+String(a.init).split('/').slice(-2).join('/'));
+  $('tablenote').textContent=r.name+(bits.length?' · '+bits.join(' · '):'');
+  const cols=r.kind==='optimizer'
+    ?[['Generation','epoch',0],['Best lap (s)','best_lap_s',2],['Finishing','finished_fraction',2],['Clearance (m)','best_clearance_m',2],['Sigma','sigma',2],['Elapsed','t','t']]
+    :r.kind==='drive'
+    ?[['Epoch','epoch',0],['Train loss','train_loss',3],['Line near (m)','line_error_near_m',2],['Line far (m)','line_error_far_m',2],['Speed (m/s)','speed_error_mps',2],['Mask IoU','val_iou',3],['Elapsed','t','t']]
+    :[['Epoch','epoch',0],['Train loss','train_loss',4],['Val IoU','val_iou',4],['Elapsed','t','t']];
+  const cell=(e,[,k,d])=>d==='t'?fmtT(e[k]):num(e[k])?(+e[k]).toFixed(d):'–';
+  $('table').innerHTML='<tr>'+cols.map(c=>`<th>${c[0]}</th>`).join('')+'</tr>'+
+    r.epochs.slice().reverse().map(e=>'<tr>'+cols.map(c=>`<td>${cell(e,c)}</td>`).join('')+'</tr>').join('');
 }
-function series(r,kind){
-  if(kind==='loss'){
-    const raw=r.steps.map(s=>({x:s.step,y:s.loss}));
-    const ep=r.epochs.map(e=>({x:e.step??e.epoch,y:e.train_loss,epoch:e.epoch}));
-    return {raw,pts:ep,xEpoch:r.epochs.length&&r.epochs[0].step==null};
-  }
-  return {raw:[],pts:r.epochs.map(e=>({x:e.step??e.epoch,y:e.val_iou,epoch:e.epoch}))};
-}
-function chart(canvas,shown,kind){
+function chart(canvas,shown,m){
   const dpr=devicePixelRatio||1,rect=canvas.getBoundingClientRect();
   canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
   const g=canvas.getContext('2d');g.scale(dpr,dpr);
-  const W=rect.width,H=rect.height,L=52,R=12,T=8,B=40;
+  const W=rect.width,H=rect.height,L=52,R=12,T=8,B=36;
   g.clearRect(0,0,W,H);
-  const all=shown.map((r,i)=>({r,i,s:series(r,kind)}));
+  const all=shown.map(a=>({r:a.r,i:a.i,s:series(a.r,m)}));
   const pts=all.flatMap(a=>[...a.s.raw,...a.s.pts]);
   if(!pts.length){g.fillStyle=css('--mute');g.font='13px system-ui';g.fillText('waiting for data…',L+10,H/2);return}
-  // x is epochs when a run only has the log; otherwise steps. Normalise per run to epochs.
-  const xs=a=>{const per=a.r.args?.tracks?Math.floor(a.r.args.tracks*a.r.args.frames/a.r.args.batch):null;
-    return p=>a.s.xEpoch||!per?p.x:p.x/per;};
-  let xmax=0,ymin=Infinity,ymax=-Infinity;
-  const log=kind==='loss'&&$('log').checked;
+  const log=!!m.log&&logScale;
   const ty=v=>log?Math.log10(Math.max(v,1e-4)):v;
-  all.forEach(a=>{const f=xs(a);[...a.s.raw,...a.s.pts].forEach(p=>{xmax=Math.max(xmax,f(p));ymin=Math.min(ymin,ty(p.y));ymax=Math.max(ymax,ty(p.y));});});
-  if(kind==='iou'){ymin=Math.min(ymin,0.9);ymax=Math.max(ymax,0.96);}
+  let xmax=1,ymin=Infinity,ymax=-Infinity;
+  pts.forEach(p=>{xmax=Math.max(xmax,p.x);ymin=Math.min(ymin,ty(p.y));ymax=Math.max(ymax,ty(p.y));});
+  (m.refs||[]).forEach(f=>{ // include a reference only when it is within reach of the data
+    const v=ty(f.y);if(v<=ymax+(ymax-ymin)*1.5+0.5&&v>=ymin-(ymax-ymin)*1.5-0.5){ymin=Math.min(ymin,v);ymax=Math.max(ymax,v);}
+  });
   const pad=(ymax-ymin)*0.08||0.05;ymin-=pad;ymax+=pad;
-  xmax=Math.max(xmax,1);
   const X=v=>L+v/xmax*(W-L-R),Y=v=>T+(1-(ty(v)-ymin)/(ymax-ymin))*(H-T-B);
   g.font='11px system-ui';g.textBaseline='middle';
-  // grid
-  const ticks=5;
-  for(let k=0;k<=ticks;k++){
-    const v=ymin+(ymax-ymin)*k/ticks,py=T+(1-k/ticks)*(H-T-B);
+  for(let k=0;k<=4;k++){
+    const v=ymin+(ymax-ymin)*k/4,py=T+(1-k/4)*(H-T-B);
     g.strokeStyle=css('--grid');g.beginPath();g.moveTo(L,py);g.lineTo(W-R,py);g.stroke();
-    g.fillStyle=css('--mute');g.textAlign='right';
-    g.fillText(log?Math.pow(10,v).toFixed(3):v.toFixed(3),L-6,py);
+    g.fillStyle=css('--mute');g.textAlign='right';g.fillText((log?Math.pow(10,v):v).toFixed(log?3:2),L-6,py);
   }
   g.textAlign='center';g.textBaseline='top';
   const xt=Math.min(Math.ceil(xmax),12);
-  for(let k=0;k<=xt;k++){const v=xmax*k/xt;g.fillStyle=css('--mute');g.fillText(v.toFixed(v%1?1:0),X(v),H-B+7);}
-  g.fillStyle=css('--mute');g.fillText('epoch',(L+W-R)/2,H-16);
-  if(kind==='iou'&&0.95>=ymin&&0.95<=ymax){
-    g.setLineDash([5,4]);g.strokeStyle=css('--mute');g.beginPath();g.moveTo(L,Y(0.95));g.lineTo(W-R,Y(0.95));g.stroke();g.setLineDash([]);
-  }
+  for(let k=0;k<=xt;k++){const v=xmax*k/xt;g.fillStyle=css('--mute');g.fillText(v.toFixed(v%1?1:0),X(v),H-B+6);}
+  g.fillText('epoch',(L+W-R)/2,H-15);
+  (m.refs||[]).forEach(f=>{
+    const py=Y(f.y);if(py<T||py>H-B)return;
+    g.setLineDash([5,4]);g.strokeStyle=css('--mute');g.beginPath();g.moveTo(L,py);g.lineTo(W-R,py);g.stroke();g.setLineDash([]);
+    g.fillStyle=css('--mute');g.textAlign='right';g.textBaseline='bottom';g.fillText(f.label,W-R-4,py-2);g.textBaseline='top';
+  });
   const hits=[];
   all.forEach(a=>{
-    const f=xs(a),col=colorOf(a.i);
-    if(a.s.raw.length){
-      g.strokeStyle=col;g.globalAlpha=.28;g.lineWidth=1;g.beginPath();
-      a.s.raw.forEach((p,k)=>k?g.lineTo(X(f(p)),Y(p.y)):g.moveTo(X(f(p)),Y(p.y)));g.stroke();g.globalAlpha=1;
-    }
+    const col=colorOf(a.i);
+    if(a.s.raw.length){g.strokeStyle=col;g.globalAlpha=.28;g.lineWidth=1;g.beginPath();
+      a.s.raw.forEach((p,k)=>k?g.lineTo(X(p.x),Y(p.y)):g.moveTo(X(p.x),Y(p.y)));g.stroke();g.globalAlpha=1;}
     g.strokeStyle=col;g.lineWidth=2;g.beginPath();
-    a.s.pts.forEach((p,k)=>k?g.lineTo(X(f(p)),Y(p.y)):g.moveTo(X(f(p)),Y(p.y)));g.stroke();
+    a.s.pts.forEach((p,k)=>k?g.lineTo(X(p.x),Y(p.y)):g.moveTo(X(p.x),Y(p.y)));g.stroke();
     g.fillStyle=col;
-    a.s.pts.forEach(p=>{g.beginPath();g.arc(X(f(p)),Y(p.y),3.5,0,7);g.fill();hits.push({px:X(f(p)),py:Y(p.y),p,name:a.r.name,col});});
+    a.s.pts.forEach(p=>{g.beginPath();g.arc(X(p.x),Y(p.y),3.5,0,7);g.fill();hits.push({px:X(p.x),py:Y(p.y),p,name:a.r.name,col});});
   });
   canvas._hits=hits;
-  if(hover&&hover.canvas===canvas){
-    const h=hover.hit;g.strokeStyle=h.col;g.lineWidth=2;g.beginPath();g.arc(h.px,h.py,6.5,0,7);g.stroke();
-  }
+  if(hover&&hover.canvas===canvas){const h=hover.hit;g.strokeStyle=h.col;g.lineWidth=2;g.beginPath();g.arc(h.px,h.py,6.5,0,7);g.stroke();}
 }
-for(const id of ['loss','iou']){
-  const c=$(id);
+function wire(c,m){
   c.addEventListener('mousemove',e=>{
     const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
     let best=null,d=1e9;(c._hits||[]).forEach(h=>{const dd=Math.hypot(h.px-x,h.py-y);if(dd<d){d=dd;best=h}});
     const tip=$('tip');
-    if(best&&d<28){
-      hover={canvas:c,hit:best};
-      tip.style.display='block';tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY+14+'px';
-      tip.innerHTML=`<b>${best.name}</b> · epoch ${best.p.epoch}<br>${id==='loss'?'train loss':'val IoU'} ${best.p.y.toFixed(4)}`;
-    }else{hover=null;tip.style.display='none';}
-    render();
+    if(best&&d<28){hover={canvas:c,hit:best};tip.style.display='block';tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY+14+'px';
+      tip.innerHTML=`<b>${best.name}</b> · epoch ${best.p.epoch}<br>${m.title.split(' (')[0]} ${best.p.y.toFixed(4)}`;}
+    else{hover=null;tip.style.display='none';}
+    chart(c,runs.map((r,i)=>({r,i})).filter(a=>!hidden.has(a.r.name)),m);
   });
   c.addEventListener('mouseleave',()=>{hover=null;$('tip').style.display='none';render();});
 }
-$('log').onchange=render;
+
+// ---- lap plots
+let plotsSeen='';
+async function pollPlots(){
+  let d;try{d=await (await fetch('/api/plots',{cache:'no-store'})).json();}catch(e){return}
+  const sel=$('plotrun');
+  if(sel.dataset.opts!==d.options.join()){const keep=sel.value;sel.dataset.opts=d.options.join();
+    sel.innerHTML=d.options.map(o=>`<option>${o}</option>`).join('');if(d.options.includes(keep))sel.value=keep;
+    else if(d.options.length>1)sel.value=d.options[d.options.length-2];}
+  const j=d.job;$('plotgo').disabled=j.running;
+  $('plotstate').textContent=j.running?`drawing ${j.label}… ${Math.round(j.elapsed_s)} s`:j.failed?'the last lap failed to draw':'';
+  const sig=d.plots.map(p=>p.file).join();
+  if(sig!==plotsSeen){plotsSeen=sig;
+    $('gallery').innerHTML=d.plots.map(p=>{
+      const cap=p.cap!=null?`cap ${p.cap} m/s`:'';
+      const line=p.detail?p.detail:p.verdict?`${p.verdict} · ${p.progress_m.toFixed(0)} m · ${p.time_s.toFixed(1)} s · clearance ${p.clearance_m.toFixed(2)} m`:'';
+      return `<div class="shot ${p.passed?'ok':'bad'}" data-src="/plots/${p.file}"><img loading="lazy" src="/plots/${p.file}" alt="${p.title||p.file}"><div><b>${p.title||p.file}</b> · ${cap}${p.race_limits?' · race limits':''}<br>${line}<br>${new Date(p.made*1000).toLocaleString()}</div></div>`;}).join('')||'<div class="empty">No lap plots yet. Pick a model and press the button.</div>';
+    $('gallery').querySelectorAll('.shot').forEach(el=>el.onclick=()=>{$('lightimg').src=el.dataset.src;$('lightbox').style.display='flex';});}
+}
+$('lightbox').onclick=()=>{$('lightbox').style.display='none';};
+$('plotgo').onclick=async()=>{
+  $('plotstate').textContent='starting…';
+  const r=await (await fetch('/api/plot',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({run:$('plotrun').value,cap:+$('plotcap').value,race:$('plotrace').checked})})).json();
+  if(r.error)$('plotstate').textContent=r.error;pollPlots();
+};
+pollPlots();setInterval(pollPlots,3000);
 addEventListener('resize',render);
 poll();setInterval(poll,3000);
 </script>

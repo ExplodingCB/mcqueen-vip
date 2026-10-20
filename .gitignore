@@ -36,3 +36,13 @@ src/mcq_localization/core/build/
 
 # perception training outputs: weights and run logs stay out of the repository
 training/perception/runs/
+
+# auto-labeler output and ingest logs
+training/data/masks/
+training/data/*.log
+
+# nose-cam test footage, its labels and the bundle prepared for the desktop: footage never enters git
+training/data/test_frames/
+training/data/test_masks/
+training/data/*.log
+training/handoff/

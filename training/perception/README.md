@@ -35,3 +35,23 @@ It does not show that the model works on a real photograph. The appearance rando
 1. Tier A and B footage through `training/data`, auto-labeled and reviewed (docs/08 section 5), used to fine-tune this model and to score it.
 2. Fine-tune on real frames, keeping the synthetic set as a regularizer.
 3. Export to ONNX and TensorRT and measure on the Orin against the 20 fps budget.
+
+## The driving model (2026-10)
+
+The segmenter above grew into a model that outputs a pavement mask, a racing line (12 waypoints, 2 to 24 m ahead, in the kart's frame) and a target speed at each. The stack drives that line through the controllers; the model never outputs steering or throttle. Version-by-version results, what each one measurably did and what none of it shows are in [docs/13](../../docs/13-driving-model-versions.md). The short version: drive-v5, camera only, laps the simulated Purdue track in 64.6 s with 0.39 m to the edge, and its pavement mask scores 0.84 IoU on held-out real kart footage (against auto-labels). Nothing here has seen the kart's own camera or driven a real kart.
+
+| File | What it is |
+| --- | --- |
+| `drive_data.py` | Camera frames on the orthophoto-draped track, labeled with the expert's racing line and speed |
+| `model.py` | `PavementNet` (mask) and `DriveNet` (mask, line and speed) |
+| `train_drive.py` | Trains the driving model: simulator frames, DAgger frames, and real footage for the mask. Prints held-out real-footage IoU each epoch |
+| `dagger.py` | Collects frames from the states the model actually reaches, labeled by the expert from where the kart really is |
+| `laptime_opt.py` | Searches for a faster expert line and speed profile by simulated lap time (CMA-ES), scored across a normal kart, a sloppy kart and servo, and the real-width pavement |
+| `race_eval.py` | Closed-loop laps, per model, speed cap and seed |
+| `robustness.py` | The same lap with the pavement, camera mount, image, servo, brakes, grip or GPS made worse |
+| `real_eval.py` | Scores a model's pavement mask on real footage from `training/data` against its auto-labels |
+| `driver.py` | The trained driver behind the simulator's camera-model contract (`--perception driver:create`) |
+| `watch.py` | Local training dashboard: loss and validation curves, the lap-time search, and a gallery of lap plots |
+
+Real footage comes from `training/data` (see [docs/08](../../docs/08-training-data.md)): `fetch_youtube.py`, `extract_frames.py` and `autolabel.py`, which labels pavement with SegFormer. The auto-labels are pseudo-labels with no human review. The 3D demo and the pre-show check are in `tools/sim_video/` and [docs/15](../../docs/15-demo-runbook.md).
+

@@ -43,7 +43,10 @@ def probe_duration(video: Path) -> float | None:
         line = line.strip()
         if line.startswith("Duration:"):
             hms = line.split()[1].rstrip(",")
-            h, m, s = hms.split(":")
+            parts = hms.split(":")
+            if len(parts) != 3:  # "N/A": a clip cut from a longer video can carry no duration
+                return None
+            h, m, s = parts
             return int(h) * 3600 + int(m) * 60 + float(s)
     return None
 
