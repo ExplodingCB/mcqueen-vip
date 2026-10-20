@@ -50,3 +50,33 @@ def load_params(path: str | Path | None = None) -> Params:
     with open(path or DEFAULT_CONFIG) as f:
         raw = yaml.safe_load(f)
     return Params(**{k: dict(v) for k, v in raw.items()})
+
+
+# Acceleration limits for the driving-model path, in place of the conservative
+# defaults in sim_default.yaml (3 m/s^2 lateral, 2 longitudinal, 3 braking).
+# Lateral 6 m/s^2 is two thirds of the sim's 0.9 friction; a perfect line on the
+# true corridor laps Purdue in 59 s with them. Placeholders like the rest of the
+# kart model until the drive-by-wire phase measures real grip.
+RACE_LIMITS = {
+    "planner.a_lat_max": 6.0,
+    "planner.a_long_max": 4.0,
+    "planner.a_brake_max": 5.0,
+    "lateral.a_lat_max": 8.0,
+    "longitudinal.accel_max": 4.5,
+    "longitudinal.decel_max": -5.5,
+}
+
+
+# A sloppier kart than the placeholder model, for testing and training the
+# driving stack against actuators that are not as good as the simulator's.
+# Values replace DynamicsParams fields (the nominal ones are in
+# config/kart_provisional.yaml). Placeholders for the unmeasured real kart.
+DEGRADED_KART = {
+    "friction": 0.8,  # 0.9 nominal
+    "steer_tau": 0.10,  # s (0.08): the servo is only a little slower than the sim's
+    "throttle_tau": 0.16,  # s (0.12)
+    "brake_tau": 0.12,  # s (0.08)
+    "accel_max": 5.0,  # m/s^2 (6.0)
+    "brake_decel_max": 4.5,  # m/s^2 (6.0)
+}
+# The servo error (gain, offset, backlash, jitter) is separate: mcq_sim.actuators.DEGRADED.

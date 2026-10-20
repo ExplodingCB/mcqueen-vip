@@ -17,7 +17,8 @@ $('play').onclick=()=>control({action:snapshot?.running?'pause':'play'});
 $('step').onclick=()=>control({action:'step',manual:manualControls()});
 $('reset').onclick=()=>{keys.clear();$('gas').value=$('pedal').value=$('steer').value=0;manualLabels();control({action:'reset'});};
 $('mode').onchange=e=>control({action:'mode',mode:e.target.value});
-$('speed').oninput=e=>$('cap').textContent=Number(e.target.value).toFixed(1)+' m/s';
+const speedLabel=v=>`${Number(v).toFixed(1)} m/s (${Math.round(v*2.23694)} mph)`;
+$('speed').oninput=e=>$('cap').textContent=speedLabel(e.target.value);
 $('speed').onchange=e=>control({action:'speed',value:Number(e.target.value)});
 for(const [id,key,unit] of [['grip','friction',''],['mass','mass',' kg']]) {
   $(id).oninput=e=>$(id+'-value').textContent=Number(e.target.value).toFixed(id==='grip'?2:0)+unit;
@@ -61,7 +62,7 @@ function update(data) {
   $('progress').textContent=Math.max(0,100*r.progress_m/track.length).toFixed(1)+'%';
   $('laps').textContent=r.completed_laps;$('violations').textContent=r.boundary_violations;
   $('wheelbase').textContent=p.wheelbase.toFixed(2)+' m';$('body-width').textContent=(2*p.half_width).toFixed(2)+' m (estimate)';
-  syncSlider('speed',data.speed_cap,data.speed_cap.toFixed(1)+' m/s');
+  syncSlider('speed',data.speed_cap,speedLabel(data.speed_cap));
   syncSlider('mass',p.mass,p.mass+' kg');syncSlider('grip',p.friction,p.friction.toFixed(2));
   const prev=path[path.length-1];if(!prev||Math.hypot(s.x-prev[0],s.y-prev[1])>.5)path.push([s.x,s.y]);
   if(path.length>6000)path.shift();draw();
@@ -98,6 +99,8 @@ function draw() {
     ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-4,-3);ctx.lineTo(-4,3);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#333';ctx.lineWidth=.7;ctx.stroke();ctx.restore();
   }
   if(snapshot.report.policy==='stack'&&reference?.length){ctx.setLineDash([5,4]);line(reference,'#00c853',1.2,true);ctx.setLineDash([]);}
+  if(snapshot.perceived){line(snapshot.perceived[0],'#ff2bd6',2);line(snapshot.perceived[1],'#ff2bd6',2);}
+  if(snapshot.model_line)line(snapshot.model_line,'#ffd600',3);
   line(path,'#1595ff',2);line([track.left[0],track.right[0]],'#fff',3);
   const s=snapshot.state,p=snapshot.report.vehicle_parameters;ctx.save();ctx.translate(...xy([s.x,s.y]));ctx.rotate(-s.yaw);
   ctx.fillStyle='#e32424';ctx.fillRect(-p.rear_extent*scale,-p.half_width*scale,(p.front_extent+p.rear_extent)*scale,2*p.half_width*scale);
@@ -106,7 +109,7 @@ function draw() {
   if(est){ctx.save();ctx.translate(...xy([est.x,est.y]));ctx.rotate(-est.yaw);ctx.strokeStyle='#00b8d4';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-6,-6);ctx.lineTo(6,6);ctx.moveTo(-6,6);ctx.lineTo(6,-6);ctx.stroke();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(16,0);ctx.stroke();ctx.restore();}
   ctx.fillStyle='#fff';ctx.fillRect(7,h-33,20*scale+10,26);ctx.fillStyle='#222';ctx.font='11px system-ui';ctx.fillText('20 m',12,h-16);ctx.fillRect(12,h-11,20*scale,1);ctx.fillText('N ↑',w-33,20);
   const source=track.meta.source?.attribution||'Provisional geometry';
-  $('map-source').textContent=`${source}. ${showAerial?'Yellow: estimated':'Estimated'} track edges.${est?' Red: true kart. Cyan cross: estimator. Green dashed: planner reference.':''}`;
+  $('map-source').textContent=`${source}. ${showAerial?'Yellow: estimated':'Estimated'} track edges.${est?' Red: true kart. Cyan cross: estimator. Green dashed: planner reference.':''}${snapshot.perceived?' Magenta: edges the stack perceives from the camera.':''}${snapshot.model_line?' Yellow: the line the driving model chose.':''}`;
 }
 window.addEventListener('resize',draw);
 const allowed=new Set(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright']);

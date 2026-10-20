@@ -20,6 +20,8 @@ from mcq_sim.sensors import STATUS_NAME
 from mcq_sim.stack import DrivingStack, estimate_error_summary
 from mcq_sim.track import Track, wrap_angle
 
+MAX_SPEED_CAP = 25.0  # m/s (56 mph): above the 50 mph the karts are built for
+
 
 def default_kart_config():
     source = Path(__file__).resolve().parent.parent / "config/kart_provisional.yaml"
@@ -59,7 +61,15 @@ class Simulator:
     PROGRESS_WINDOW_M = 8.0
 
     def __init__(
-        self, track: Track, config=None, policy="reference", speed_cap=4.0, seed=0, tuning=None, perception="map"
+        self,
+        track: Track,
+        config=None,
+        policy="reference",
+        speed_cap=4.0,
+        seed=0,
+        tuning=None,
+        perception="map",
+        camera_appearance="auto",
     ):
         self.track = track
         self.perception_model = None
@@ -67,14 +77,26 @@ class Simulator:
         self.tuning = tuning or load_params()
         self.perception_spec = perception
         self.vehicle_params, self.camera_params, self.provenance = load_kart(config)
-        self.camera = TrackCamera(track, self.camera_params)
+        self.camera = TrackCamera(
+            track, self.camera_params, self._appearance(camera_appearance, track, policy, perception)
+        )
         self.policy_name = policy
         self.segmenter = None if policy in ("reference", "manual", "stack") else load_segmenter(policy)
-        if not math.isfinite(speed_cap) or not 0 < speed_cap <= 12:
-            raise ValueError("speed cap must be in (0, 12] m/s")
+        if not math.isfinite(speed_cap) or not 0 < speed_cap <= MAX_SPEED_CAP:
+            raise ValueError(f"speed cap must be in (0, {MAX_SPEED_CAP:g}] m/s")
         self.speed_cap = speed_cap
         self.seed = seed
         self.reset()
+
+    @staticmethod
+    def _appearance(choice, track, policy, perception):
+        """``auto`` drapes the track's aerial photo when it has one, except for
+        the color-threshold demo, which only works on the flat procedural look."""
+        if choice != "auto":
+            return choice
+        if "camera-demo" in (policy, perception) or not track.meta.get("aerial_path"):
+            return "flat"
+        return "aerial"
 
     def _make_perception(self):
         """What feeds the stack's planner: nothing (it follows the map), the true
@@ -321,6 +343,11 @@ class Simulator:
             "camera_parameters": asdict(self.camera_params),
             "estimator": estimate_error_summary(self.log) if self.stack is not None else None,
             "stack_stop_reason": self.stack.stop_reason if self.stack is not None else None,
+            "stack_held_plans": self.stack.held_plans if self.stack is not None else None,
+            "model_plans": self.stack.model_plans if self.stack is not None else None,
+            "model_vetoes": self.stack.model_vetoes if self.stack is not None else None,
+            "model_corrections": self.stack.model_corrections if self.stack is not None else None,
+            "model_veto_reasons": dict(self.stack.model_veto_reasons) if self.stack is not None else None,
         }
 
 

@@ -83,3 +83,17 @@ The new environment uses 100 Hz steps with internal 400 Hz integration, a dynami
 Collect synchronized steering commands/feedback, pedals, speed, RTK rear-axle pose and IMU data across coastdown, braking, constant-radius turns and complete laps. Measure tire width, mass, CG, steering geometry, camera intrinsics/extrinsics and both pavement edges. Fit on some sessions, validate on separate sessions and conditions.
 
 Use the [replay contract](11-simulator-validation.md) to measure errors. A single "99% accurate" score is undefined until observable quantities, normalization and the operating envelope are fixed. All current reports explicitly retain `accuracy_validated: false`.
+
+## Live demo
+
+A page built for showing the model driving, not for engineering: a 3D chase camera over the Purdue orthophoto with a 3D kart, the track from above with the kart's path coloured by speed, and the model's own view with the line and speeds it chose. Any trained driving model (`training/perception/runs/drive-*`) can be picked live, next to the map-driven expert for comparison, and a session table keeps each run's result.
+
+```sh
+tools/sim_video/run_demo.sh                    # then open http://127.0.0.1:8766/demo
+tools/sim_video/run_demo.sh my-host.ts.net     # also answer on a tailnet name
+```
+
+Controls: start, reset, driver, speed cap, 1x/2x/4x simulation speed, four camera views (chase, cockpit, above, overview; drag to orbit, wheel to zoom), overlays, and "after a run" (stop, replay, or move to the next driver for an unattended demo). Space starts and pauses, R resets, 1 to 4 change the camera, F goes full screen.
+
+The simulator runs several times faster than real time on an idle machine and crawls on a busy one (a loaded laptop took 1 to 3 s per 0.1 s of simulated time), so stop training and searches before presenting. The 3D view loads three.js from cdnjs, so it needs a network; the map and the model's view work without one. The server is `mcq_sim view`; the page is `src/mcq_sim/mcq_sim/web/demo.html` and talks to `/api/demo/*`.
+

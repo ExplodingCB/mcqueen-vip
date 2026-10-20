@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from mcq_sim.harness import run_closed_loop
-from mcq_sim.params import load_params
+from mcq_sim.params import RACE_LIMITS, load_params
 from mcq_sim.track import Raceline, Track
 
 
@@ -70,12 +70,13 @@ def cmd_simulate(args) -> int:
         speed_cap=args.speed_cap,
         seed=args.seed,
         perception=args.perception,
-        tuning=load_params(args.config).override(_parse_set(args.set)),
+        camera_appearance=args.camera_appearance,
+        tuning=load_params(args.config).override({**(RACE_LIMITS if args.race_limits else {}), **_parse_set(args.set)}),
     )
     if args.command == "view":
         from mcq_sim.viewer import serve
 
-        serve(sim, args.port)
+        serve(sim, args.port, allow_hosts=(args.allow_host or "").split(","))
         return 0
     report = evaluate(sim, args.seconds, args.laps)
     output = Path(args.out)
@@ -147,6 +148,21 @@ def main(argv=None) -> int:
             default="map",
             help="with --policy stack: what the planner drives between. map (follow the track file), "
             "oracle (true edges), camera-demo, or a module:factory segmentation model read through the camera",
+        )
+        command.add_argument(
+            "--camera-appearance",
+            choices=["auto", "aerial", "flat"],
+            default="auto",
+            help="aerial drapes the track's orthophoto over the ground; flat is the procedural look the "
+            "color-threshold demo needs; auto picks aerial when the track has a photo",
+        )
+        command.add_argument(
+            "--allow-host", help="comma-separated extra host names the viewer answers to, such as a tailnet name"
+        )
+        command.add_argument(
+            "--race-limits",
+            action="store_true",
+            help="faster acceleration limits (mcq_sim.params.RACE_LIMITS) for the driving-model path",
         )
         command.add_argument("--config", help="tuning yaml for the stack (default: config/sim_default.yaml)")
         command.add_argument(

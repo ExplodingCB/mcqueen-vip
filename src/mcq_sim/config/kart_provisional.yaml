@@ -14,11 +14,11 @@ dynamics:
   command_delay: 0.04
   throttle_tau: 0.12
   brake_tau: 0.08
-  accel_max: 3.0
-  v_max: 12.0
+  accel_max: 6.0
+  v_max: 30.0
   brake_decel_max: 6.0
   rolling_decel: 0.3
-  drag: 0.004
+  drag: 0.002
   half_width: 0.8
   front_extent: 1.65
   rear_extent: 0.35
@@ -36,5 +36,11 @@ provenance:
   rear_track_width: User reported at most 55 inches; measurement convention not confirmed.
   overall_width: Assumed 1.6 m envelope, not inferred from the rear track width.
   remaining_dynamics: Engineering placeholders. No kart telemetry calibration yet.
+  drive: >-
+    Sized on 2026-10-06 to the user's statement that the karts reach 50 mph
+    (22.4 m/s). accel_max 6 m/s^2 is a traction-and-power guess for a 15 kW
+    class kart; v_max 30 m/s is where full throttle stops adding force; drag
+    0.002 1/m is CdA 0.55 m^2 at 170 kg. Together they give a 23.1 m/s
+    (52 mph) top speed and 0 to 20 m/s in about 7 s over 95 m. Not measured.
   camera: Placeholder intrinsics and mounting. No measured camera calibration yet.
   accuracy_validated: false
